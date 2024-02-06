@@ -15,22 +15,20 @@ The format of the .zips were inconsistant, especially data for the 'Monster Awea
 A fair amount of time was also spent making all the names uniform (game_name/P## VRLOG-#######).
 
 Also included was SelfReportData.zip but these were jsut copies of each recording's voice.csv.
-Because of this it made sense to not inclllude thee redundant data.
+Because of this it made sense to not include thee redundant data.
 
 
-As you can tell rustdesk is not hhhhappy I type soooooooooo faaaast.
+As you can tell rustdesk is not happy I type so fast.
 
 ## Feature Engineering/Selection
 
 I still need to figure out what data I do/dont need.
 
-I likely wont need lighting datttttta as this tends to remain static iiiiiin most ssscenes.
-Depth seems iffy to me buut I can  see casessss where i might be usefuuuuuuuuuuuuuul.
+I likely wont need lighting data as this tends to remain static in most scenes.
+Depth seems iffy to me buut I can  see casessss where i might be useful.
 
-I definitely want the camera, controler, frrrrrrrrrrrrrrrrrrrame, and motion vector dataaa though.
-camerrraa data for point of view and vieewpoiiiiint motion(seppppperate from HMD motion).
+I definitely want the camera, controler, frame, and motion vector dataaa though.
+camera data for point of view and viewpoint motion(seperate from HMD motion).
 controler for the player's real world movements.
-frameeeee and motion vecotr data willl be a different matter.
+frame and motion vector data will be a different matter.
 
-
-Ok Im just gonna do this on my machene lmaoooo
