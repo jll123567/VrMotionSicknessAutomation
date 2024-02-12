@@ -9,7 +9,7 @@
 #   Traffic Cop: Flip(Depth, Frame), OneEye
 #   Voxel Shot: Flip(Depth, Frame), OneEye
 #   Rome: FLip(Depth, Frame), OneEye
-from PIL import Image, ImageDraw
+from PIL import Image
 import os
 import re
 
@@ -17,18 +17,18 @@ debug = False  # Print logs, do not overwrite images.
 eyes = 2
 
 
-def rename_debug(path):
+def rename_debug(fp):
     """make a copy of the file."""
-    im = Image.open(path)
-    path = path.split('/')
-    path[-1] = "debug_" + path[-1]
-    path = '/'.join(path)
-    im.save(path)
-    return path
+    im = Image.open(fp)
+    fp = fp.split('/')
+    fp[-1] = "debug_" + fp[-1]
+    fp = '/'.join(fp)
+    im.save(fp)
+    return fp
 
 
 def resize_image(im: Image, factor: int = 0.5):
-    """Take an image defined by path and scale it by factor(0.5 is halfed)"""
+    """Take an image defined by path and scale it by factor(0.5 is halved)"""
     width, height = im.size
     new_width, new_height = int(width * factor), int(height * factor)
     return im.resize((new_width, new_height), resample=Image.NEAREST)
@@ -53,9 +53,11 @@ def to_oneeye(im: Image):
     """Convert a two eye image to a single eye image(by cropping)"""
     return im.crop((1008, 0, im.size[0] + 16, im.size[1]))
 
+
 def enforce_eyes(im: Image, current_eyes: int):
     if eyes > 2 or eyes < 1 or current_eyes > 2 or current_eyes < 1:
-        raise Exception(f"Eyes settings are out of range. Please fix. {eyes} and {current_eyes} should be either 1 or 2")
+        raise Exception(
+            f"Eyes settings are out of range. Please fix. {eyes} and {current_eyes} should be either 1 or 2")
     if eyes == 2 and current_eyes == 1:
         return to_twoeye(im)
     elif eyes == 1 and current_eyes == 2:
@@ -67,7 +69,8 @@ def enforce_eyes(im: Image, current_eyes: int):
 if __name__ == "__main__":
     root_path = "/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection"
     print("Getting Paths")
-    paths = [str(os.path.join(dirpath, f)) for (dirpath, dirnames, filenames) in os.walk(root_path) for f in filenames if re.search(r'[ds][0-9]+\.jpg', f)]
+    paths = [str(os.path.join(dirpath, f)) for (dirpath, dirnames, filenames) in os.walk(root_path) for f in filenames
+             if re.search(r'[ds][0-9]+\.jpg', f)]
     d_paths = [p for p in paths if re.search(r'd[0-9]+\.jpg', p)]
     print(f"Got {len(paths)} images of which {len(d_paths)} are depth.")
     for path in paths:
