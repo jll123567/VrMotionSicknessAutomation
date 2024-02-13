@@ -12,6 +12,8 @@
 from PIL import Image
 import os
 import re
+import pandas as pd
+import numpy as np
 
 debug = False  # Print logs, do not overwrite images.
 eyes = 2
@@ -66,8 +68,7 @@ def enforce_eyes(im: Image, current_eyes: int):
         return im
 
 
-if __name__ == "__main__":
-    root_path = "/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection"
+def preprocess_images(root_path):
     print("Getting Paths")
     paths = [str(os.path.join(dirpath, f)) for (dirpath, dirnames, filenames) in os.walk(root_path) for f in filenames
              if re.search(r'[ds][0-9]+\.jpg', f)]
@@ -137,3 +138,50 @@ if __name__ == "__main__":
         for path in paths:
             if "debug" in path.split('/')[-1]:
                 os.remove(path)
+
+
+def get_nearest_frame(ts: int, camera: pd.DataFrame) -> pd.Series:
+    """Get the nearest framecount and timestamp from camera that's greater equal to a given timestamp."""
+    ts = ts / 1000  # Remove some digits of precision to make comparison work.
+
+    # The row with a timestamp greater or equal to ts, only the framecount and timestamp
+    return camera[camera["timestamp"] >= ts].iloc[0, 0]
+def preprocess_voice(root_path: str) -> None:
+    # Load voice.
+    voice = pd.read_csv(root_path + "/voice.csv", header=None)
+    voice.columns = ["timestamp", "rating", "method"]
+
+    # Load camera(decent refrence for framecount and timestamps).
+    camera = pd.read_csv(root_path + "/camera.csv")
+
+    # Add framecounts to voice from camera.
+    voice["nearest_frame"] = voice.apply(lambda r: get_nearest_frame(r.iloc[0], camera), axis=1)
+
+    # Expand voice for each third frame (what's recorded in camera)
+    last_frame = camera.iloc[-1, 0]  # Last col(nearest frame) of last row
+    new_index = pd.Index(np.arange(3, last_frame + 3, 3), name="nearest_frame")
+    voice = voice.set_index(["nearest_frame"]).reindex(new_index).reset_index()
+    voice["timestamp"] = camera["timestamp"]  # Copy timestamps from voice to camera (precision is lower but w/e)
+
+    # Add values to begin and end for interpolation.
+    voice.iloc[0, 2] = 1  # Assume starting with no sickness.
+    voice.iloc[-1, 2] = voice["rating"][voice["rating"].notnull()].iloc[-1]  # Assume ends with last recorded rating.
+
+    # Interpolate, round ratings.
+    voice = voice.interpolate(method="slinear").astype({"rating": int})
+
+    # Fill method on interpolated.
+    voice.loc[voice["method"].isnull(), "method"] = "interpolated"
+
+    #write out new
+    voice.to_csv(root_path+"/voice_preproc.csv", index=False)
+
+def preprocess_all_voice(root_path: str) -> None:
+    paths = [str(dirpath) for (dirpath, dirnames, filenames) in os.walk(root_path) for d in dirnames
+             if re.match(r'P[0-9]{1,2} VRLOG-[0-9]{7}', d)]
+    print(paths)
+
+
+if __name__ == "__main__":
+    # preprocess_images("/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection")
+    preprocess_all_voice("/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection")
