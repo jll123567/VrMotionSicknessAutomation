@@ -43,6 +43,13 @@ Using Pillow(python library) to flip images and resize them to half-resolution.
 I also need to either crop them in or double them for the two/one eye problem.
 If I double the "one-eyes" I might flip the opposite eye.
 
+Went to the motionsickness ratings in each recording's voice.csv and did some preprocessing.
+Using camera.csv as a template, I added the nearest frame to each rating and expanded over the entire recording.
+Timestamps now folow those in camera.csv as well.
+Since the ratings are kinda sparse, I interpolated (linear, rounded to 0 decimals) between each rating given.
+I made an assumption that ratings start at one at the beginning of the recording (user is not sick)
+and end with the last rating held to the end.
+
 ## Loading Data
 ZFP is a nightmare to load if the files don't have headers, which they don't.
 Emailed the guy listed as the designated contact, so help me god they get back to me.

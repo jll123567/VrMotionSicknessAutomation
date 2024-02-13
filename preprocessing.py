@@ -154,6 +154,8 @@ def get_nearest_frame(ts: int, camera: pd.DataFrame) -> pd.Series:
 
     # The row with a timestamp greater or equal to ts, only the framecount and timestamp
     return camera[camera["timestamp"] >= ts].iloc[0, 0]
+
+
 def preprocess_voice(root_path: str) -> None:
     # Load voice.
     voice = pd.read_csv(root_path + "/voice.csv", header=None)
@@ -181,8 +183,9 @@ def preprocess_voice(root_path: str) -> None:
     # Fill method on interpolated.
     voice.loc[voice["method"].isnull(), "method"] = "interpolated"
 
-    #write out new
-    voice.to_csv(root_path+"/voice_preproc.csv", index=False)
+    # write out new
+    voice.to_csv(root_path + "/voice_preproc.csv", index=False)
+
 
 def preprocess_all_voice(root_path: str) -> None:
     paths = [str(os.path.join(dirpath, d)) for (dirpath, dirnames, filenames) in os.walk(root_path) for d in dirnames
@@ -194,7 +197,6 @@ def preprocess_all_voice(root_path: str) -> None:
             preprocess_voice(path)
         except FileNotFoundError:
             print("  No camera.csv, skipping.")
-
 
 
 if __name__ == "__main__":
