@@ -1,8 +1,8 @@
-import tensorflow, keras
+import tensorflow as tf
+import tensorboard
 import pandas as pd
 import numpy as np
-import zfpy
-from PIL import Image
+from tensorflow import keras
 
 if __name__ == "__main__":
     pass

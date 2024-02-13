@@ -9,6 +9,14 @@
 #   Traffic Cop: Flip(Depth, Frame), OneEye
 #   Voxel Shot: Flip(Depth, Frame), OneEye
 #   Rome: FLip(Depth, Frame), OneEye
+
+# Missing Camera.csv(do not import)
+#   P3 VRLOG-5051017
+#   P3 VRLOG-5051033
+#   P20 VRLOG-6051722
+#   P19 VRLOG-6051703
+#   P21 VRLOG-6051736
+#   P18 VRLOG-6051153
 from PIL import Image
 import os
 import re
@@ -177,11 +185,19 @@ def preprocess_voice(root_path: str) -> None:
     voice.to_csv(root_path+"/voice_preproc.csv", index=False)
 
 def preprocess_all_voice(root_path: str) -> None:
-    paths = [str(dirpath) for (dirpath, dirnames, filenames) in os.walk(root_path) for d in dirnames
+    paths = [str(os.path.join(dirpath, d)) for (dirpath, dirnames, filenames) in os.walk(root_path) for d in dirnames
              if re.match(r'P[0-9]{1,2} VRLOG-[0-9]{7}', d)]
-    print(paths)
+    paths = set(paths)
+    for i, path in enumerate(paths):
+        print(f"{i}/{len(paths)}Preprocessing voice.csv in: {path}")
+        try:
+            preprocess_voice(path)
+        except FileNotFoundError:
+            print("  No camera.csv, skipping.")
+
 
 
 if __name__ == "__main__":
     # preprocess_images("/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection")
-    preprocess_all_voice("/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection")
+    # preprocess_all_voice("/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection")
+    pass
