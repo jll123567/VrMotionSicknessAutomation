@@ -178,7 +178,7 @@ def preprocess_voice(root_path: str) -> None:
     voice.iloc[-1, 2] = voice["rating"][voice["rating"].notnull()].iloc[-1]  # Assume ends with last recorded rating.
 
     # Interpolate, round ratings.
-    voice = voice.interpolate(method="slinear").astype({"rating": int})
+    voice = voice.interpolate(method="slinear").round(0).astype({"rating": int})
 
     # Fill method on interpolated.
     voice.loc[voice["method"].isnull(), "method"] = "interpolated"
@@ -201,5 +201,5 @@ def preprocess_all_voice(root_path: str) -> None:
 
 if __name__ == "__main__":
     # preprocess_images("/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection")
-    # preprocess_all_voice("/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection")
+    preprocess_all_voice("/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection")
     pass
