@@ -53,3 +53,10 @@ and end with the last rating held to the end.
 ## Loading Data
 ZFP is a nightmare to load if the files don't have headers, which they don't.
 Emailed the guy listed as the designated contact, so help me god they get back to me.
+
+Loading each csv file into pandas and then converting it to a nicer format.
+First was voice, easy enough just grab the rating
+Next was camera, had to do some things to convert the projection and view matricies since they were strings.
+Then was the controllers, I needed to dump a bunch of rows and columns, then needed to merge three rows into one.
+Then the pose, which was a colletion of both problems from camera and control.
+These three are the numeric inputs (X_n).
