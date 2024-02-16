@@ -13,7 +13,7 @@ def dataset_dict_to_rows(dataset: tf.data.Dataset) -> tf.data.Dataset:
     return dataset.map(lambda r: [v for _, v in r.items()])
 
 
-def load_camera(recording_path: str, main_camera_name=None) -> tf.data.Dataset:
+def load_camera(recording_path: str) -> tf.data.Dataset:
     """Extract the camera data(cameraname, projection martix, view matrix) from csv to a tf Dataset."""
     camera_df = pd.read_csv(recording_path + "/camera.csv", header=0)
 
@@ -62,13 +62,13 @@ def load_control(recording_path: str) -> tf.data.Dataset:
     control_df = control_df.drop(["timestamp", "packetNum", "Unnamed: 16"], axis=1)
     control_tensor = tf.data.Dataset.from_tensor_slices(dict(control_df))
 
-    def reformat_control(*row):
+    def reformat_control(*control_row):
         """Unbatch and convert each device's values to one row."""
         new_row = []
 
         for i in range(2, 14):
             for j in range(3):
-                new_row.append(row[i][j])
+                new_row.append(control_row[i][j])
 
         return new_row
 
@@ -109,13 +109,13 @@ def load_pose(recording_path: str) -> tf.data.Dataset:
 
     pose_tensor = tf.data.Dataset.from_tensor_slices(dict(pose_df))
 
-    def reformat_pose(*row):
+    def reformat_pose(*pose_row):
         """Unbatch and convert each device's values to one row."""
         new_row = []
 
         for i in range(2, 20):
             for j in range(3):
-                new_row.append(row[i][j])
+                new_row.append(pose_row[i][j])
 
         return new_row
 
@@ -157,27 +157,27 @@ def load_voice(recording_path: str) -> tf.data.Dataset:
 
 
 def load_images(path: str):
-    images = tf.data.Dataset.list_files(path+"/s*.jpg", shuffle=False)
+    images_dataset = tf.data.Dataset.list_files(path+"/s*.jpg", shuffle=False)
 
     def decode_img(img_fp: str) -> tf.Tensor:
-        img = tf.io.read_file(img_fp)
-        img = tf.io.decode_image(img, dtype=tf.float32)
-        return img
+        i = tf.io.read_file(img_fp)
+        i = tf.io.decode_image(i, dtype=tf.float32)
+        return i
 
-    images = images.map(decode_img)
+    images_dataset = images_dataset.map(decode_img)
 
     if DEBUG:
         print("s#######[0]")
-        for img in images.take(1):
+        for img in images_dataset.take(1):
             print(f"  {img.numpy()}")
 
-    return images
+    return images_dataset
 
 
 def load_recording(path: str):
     y = load_voice(path)
     X_n = load_numeric(path)
-    X_i = load_image(path)
+    X_i = load_images(path)
     return tf.data.Dataset.zip(X_n, X_i, y)
 
 

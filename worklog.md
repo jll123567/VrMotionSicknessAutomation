@@ -52,11 +52,13 @@ and end with the last rating held to the end.
 
 ## Loading Data
 ZFP is a nightmare to load if the files don't have headers, which they don't.
-Emailed the guy listed as the designated contact, so help me god they get back to me.
+I emailed the guy listed as the designated contact(feb 12), so help me god they get back to me.
+Haven't heard back yet, emailed again, but to a different email they have listed at their personal site(feb 15)
 
 Loading each csv file into pandas and then converting it to a nicer format.
-First was voice, easy enough just grab the rating
+First was voice, easy enough, grab the rating from voice_preproc.csv
 Next was camera, had to do some things to convert the projection and view matricies since they were strings.
 Then was the controllers, I needed to dump a bunch of rows and columns, then needed to merge three rows into one.
-Then the pose, which was a colletion of both problems from camera and control.
+Then the pose, which was a collection of both problems from camera and control.
 These three are the numeric inputs (X_n).
+Load_images was straightforward, mostly copy-paste from last time(autoencodevr), though this time more efficient since I read the tensorflow docs more closely.
