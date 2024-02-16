@@ -3,6 +3,7 @@ import tensorboard
 import pandas as pd
 import numpy as np
 from tensorflow import keras
+import re
 
 DEBUG = True
 
@@ -36,7 +37,10 @@ def load_camera(recording_path: str, main_camera_name=None) -> tf.data.Dataset:
 
     # Drop uneccesary columns/rows.
     camera_df = camera_df.drop(["projection", "view", "framecounter", "timestamp"], axis=1)
-    # SelectCameraHere
+    if re.search(r'Pottery', recording_path):
+        camera_df = camera_df.drop(camera_df[~camera_df["name"].str.contains(r'^Eye')].index)
+    else:
+        camera_df = camera_df.drop(camera_df[~camera_df["name"].str.contains(r'[Mm]ain|\(eye\)$|^Camera$')].index)
     camera_df = camera_df.drop(["name"], axis=1)
 
     # Convert to tensor in correct format.
@@ -136,7 +140,8 @@ def load_numeric(recording_path: str):
         print("Numeric[0:4]")
         for row in numeric.take(5):
             print(f"  {[[element.numpy() for element in item] for item in row]}")
-    return
+
+    return numeric
 
 
 def load_voice(recording_path: str) -> tf.data.Dataset:
@@ -151,14 +156,28 @@ def load_voice(recording_path: str) -> tf.data.Dataset:
     return voice
 
 
-def load_image(path: str):
-    pass
+def load_images(path: str):
+    images = tf.data.Dataset.list_files(path+"/s*.jpg", shuffle=False)
+
+    def decode_img(img_fp: str) -> tf.Tensor:
+        img = tf.io.read_file(img_fp)
+        img = tf.io.decode_image(img, dtype=tf.float32)
+        return img
+
+    images = images.map(decode_img)
+
+    if DEBUG:
+        print("s#######[0]")
+        for img in images.take(1):
+            print(f"  {img.numpy()}")
+
+    return images
 
 
 def load_recording(path: str):
-    y = load_voice(".")
-    X_n = load_numeric(".")
-    X_i = load_image(".")
+    y = load_voice(path)
+    X_n = load_numeric(path)
+    X_i = load_image(path)
     return tf.data.Dataset.zip(X_n, X_i, y)
 
 
@@ -167,5 +186,5 @@ def load_dataset():
 
 
 if __name__ == "__main__":
-
+    images = load_images('/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Pottery/P22 VRLOG-6061422')
     pass
