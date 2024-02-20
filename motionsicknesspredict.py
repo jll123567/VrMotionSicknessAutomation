@@ -136,10 +136,24 @@ def load_numeric(recording_path: str):
 
     numeric = tf.data.Dataset.zip(camera, control, pose)
 
+    def unpack_numeric(cam: tf.Tensor, ctrl: tf.Tensor, pose: tf.Tensor) -> list:
+        num = []
+
+        for i in cam:
+            num.append(i)
+        for i in ctrl:
+            num.append(i)
+        for i in pose:
+            num.append(i)
+
+        return num
+
+    numeric = numeric.map(unpack_numeric)
+
     if DEBUG:
         print("Numeric[0:4]")
         for row in numeric.take(5):
-            print(f"  {[[element.numpy() for element in item] for item in row]}")
+            print(f"  {[item.numpy() for item in row]}")
 
     return numeric
 
@@ -207,5 +221,5 @@ def make_numeric_model(input_shape):
     return keras.model.Model(inputs=input_layer, output=output_layer)
 
 if __name__ == "__main__":
-    images = load_images('/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Pottery/P22 VRLOG-6061422')
+    images = load_numeric('/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Pottery/P22 VRLOG-6061422')
     pass
