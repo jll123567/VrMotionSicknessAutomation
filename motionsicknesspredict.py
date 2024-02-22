@@ -5,7 +5,7 @@ import numpy as np
 from tensorflow import keras
 import re
 
-DEBUG = True
+DEBUG = False
 
 
 def dataset_dict_to_rows(dataset: tf.data.Dataset) -> tf.data.Dataset:
@@ -56,17 +56,18 @@ def load_camera(recording_path: str) -> tf.data.Dataset:
 
 def load_control(recording_path: str) -> tf.data.Dataset:
     """Extract the controller data (button touch, button press, axis0-4x/y) from csv to a tf Dataset."""
+    # TODO: Extract button bitmasks to separate columns.
     control_df = pd.read_csv(recording_path + "/control.csv", header=0, )
     control_df = control_df.drop(
         control_df[(control_df["framecounter"] % 3 != 0) | (control_df["framecounter"] == 0)].index)
-    control_df = control_df.drop(["timestamp", "packetNum", "Unnamed: 16"], axis=1)
+    control_df = control_df.drop(["timestamp", "packetNum", "Unnamed: 16", "buttonPressed", "buttonTouched"], axis=1)
     control_tensor = tf.data.Dataset.from_tensor_slices(dict(control_df))
 
     def reformat_control(*control_row):
         """Unbatch and convert each device's values to one row."""
         new_row = []
 
-        for i in range(2, 14):
+        for i in range(2, 12):
             for j in range(3):
                 new_row.append(control_row[i][j])
 
@@ -129,14 +130,14 @@ def load_pose(recording_path: str) -> tf.data.Dataset:
     return pose_tensor
 
 
-def load_numeric(recording_path: str):
+def load_numeric(recording_path: str) -> tf.data.Dataset:
     camera = load_camera(recording_path)
     control = load_control(recording_path)
     pose = load_pose(recording_path)
 
     numeric = tf.data.Dataset.zip(camera, control, pose)
 
-    def unpack_numeric(cam: tf.Tensor, ctrl: tf.Tensor, pose: tf.Tensor) -> list:
+    def unpack_numeric(cam: tf.Tensor, ctrl: tf.Tensor, pose: tf.Tensor) -> tf.Tensor:
         num = []
 
         for i in cam:
@@ -146,7 +147,7 @@ def load_numeric(recording_path: str):
         for i in pose:
             num.append(i)
 
-        return num
+        return tf.convert_to_tensor(num, dtype=tf.float64)
 
     numeric = numeric.map(unpack_numeric)
 
@@ -170,8 +171,8 @@ def load_voice(recording_path: str) -> tf.data.Dataset:
     return voice
 
 
-def load_images(path: str):
-    images_dataset = tf.data.Dataset.list_files(path+"/s*.jpg", shuffle=False)
+def load_images(path: str) -> tf.data.Dataset:
+    images_dataset = tf.data.Dataset.list_files(path + "/s*.jpg", shuffle=False)
 
     def decode_img(img_fp: str) -> tf.Tensor:
         i = tf.io.read_file(img_fp)
@@ -188,38 +189,114 @@ def load_images(path: str):
     return images_dataset
 
 
-def load_recording(path: str):
+def load_recording(path: str) -> tuple[tf.data.Dataset, tf.data.Dataset]:
     y = load_voice(path)
-    X_n = load_numeric(path)
-    X_i = load_images(path)
-    return tf.data.Dataset.zip(X_n, X_i, y)
+    x_n = load_numeric(path)
+    x_i = load_images(path)
+    return tf.data.Dataset.zip(x_n, x_i), y
 
 
-def load_dataset():
-    pass
+def load_dataset(paths: list[str]) -> tuple[tf.data.Dataset, tf.data.Dataset]:
+    x, y = load_recording(paths.pop(0))
+    for i in paths:
+        next_x, next_y = load_recording(i)
+        x.concatenate(next_x)
+        y.concatenate(next_y)
+    return x, y
 
 
-def make_numeric_model(input_shape):
+def test_train_split(x: tf.data.Dataset, y: tf.data.Dataset, split=0.8, batch=200) -> tuple:
+    """
+    Generate a train and test split for a dataset.
+
+    x and y must be the same length
+    """
+    l = int(x.cardinality().numpy())
+    l_train = int(l * split)
+    l_test = l - l_train
+
+    x_train = x.take(l_train)
+    x_test = x.take(l_test)
+    y_train = y.take(l_train)
+    y_test = y.take(l_test)
+
+    return tf.data.Dataset.zip(x_train, y_train).batch(batch).batch(10), tf.data.Dataset.zip(x_test, y_test).batch(batch).batch(10)
+
+
+def make_numeric_model(input_shape) -> keras.Model:
     input_layer = keras.layers.Input(input_shape)
 
-    conv1 = keras.layers.Conv2D(filters=64, kernel_size=3, padding="same")(input_layer)
+    conv1 = keras.layers.Conv1D(filters=64, kernel_size=3, padding="same")(input_layer)
     conv1 = keras.layers.BatchNormalization()(conv1)
     conv1 = keras.layers.ReLU()(conv1)
 
-    conv2 = keras.layers.Conv2D(filters=64, kernel_size=3, padding="same")(conv1)
+    conv2 = keras.layers.Conv1D(filters=64, kernel_size=3, padding="same")(conv1)
     conv2 = keras.layers.BatchNormalization()(conv2)
     conv2 = keras.layers.ReLU()(conv2)
 
-    conv3 = keras.layers.Conv2D(filters=64, kernel_size=3, padding="same")(conv2)
+    conv3 = keras.layers.Conv1D(filters=64, kernel_size=3, padding="same")(conv2)
     conv3 = keras.layers.BatchNormalization()(conv3)
     conv3 = keras.layers.ReLU()(conv3)
 
     gap = keras.layers.GlobalAveragePooling1D()(conv3)
 
-    output_layer = keras.layers.Dense(5, activation="softmax")(gap)  # units is 5 since there are five classes(rating 1-5)
+    output_layer = keras.layers.Dense(5, activation="softmax")(
+        gap)  # units is 5 since there are five classes(rating 1-5)
 
-    return keras.model.Model(inputs=input_layer, output=output_layer)
+    return keras.Model(inputs=input_layer, outputs=output_layer, name="Numeric_Convolution_Model")
+
+
+def make_image_model(input_shape) -> keras.Model:
+    input_layer = keras.layers.Input(input_shape)
+
+    conv1 = keras.layers.Conv3D(filters=64, kernel_size=3, padding="same")(input_layer)
+    conv1 = keras.layers.BatchNormalization()(conv1)
+    conv1 = keras.layers.ReLU()(conv1)
+
+    conv2 = keras.layers.Conv3D(filters=64, kernel_size=3, padding="same")(conv1)
+    conv2 = keras.layers.BatchNormalization()(conv2)
+    conv2 = keras.layers.ReLU()(conv2)
+
+    conv3 = keras.layers.Conv3D(filters=64, kernel_size=3, padding="same")(conv2)
+    conv3 = keras.layers.BatchNormalization()(conv3)
+    conv3 = keras.layers.ReLU()(conv3)
+
+    gap = keras.layers.GlobalAveragePooling1D()(conv3)
+
+    output_layer = keras.layers.Dense(5, activation="softmax")(
+        gap)  # units is 5 since there are five classes(rating 1-5)
+
+    return keras.Model(inputs=input_layer, outputs=output_layer, name="Image_Convolution_Model")
+
 
 if __name__ == "__main__":
-    images = load_numeric('/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Pottery/P22 VRLOG-6061422')
+    numeric = load_numeric(
+        '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Pottery/P22 VRLOG-6061422')
+    rating = load_voice(
+        '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Pottery/P22 VRLOG-6061422')
+
+    train, test = test_train_split(numeric, rating)
+
+    callbacks = [
+        keras.callbacks.ModelCheckpoint(
+            "checkpoints/best_model.keras", save_best_only=True, monitor="val_loss"
+        ),
+        keras.callbacks.ReduceLROnPlateau(
+            monitor="val_loss", factor=0.5, patience=20, min_lr=0.0001
+        ),
+        keras.callbacks.EarlyStopping(monitor="val_loss", patience=50, verbose=1)
+    ]
+
+    numeric_model = make_numeric_model((None, 116))
+    numeric_model.compile(optimizer="adam",
+                          loss="sparse_categorical_crossentropy",
+                          #metrics=["sparse_catagorical_accuracy"],
+                          )
+    hist = numeric_model.fit(x=train,
+                             epochs=5,
+                             #callbacks=callbacks,
+                             verbose=1
+                             )
+    numeric_model.evaluate(test)
+
     pass
