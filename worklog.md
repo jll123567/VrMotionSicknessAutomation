@@ -50,6 +50,9 @@ Since the ratings are kinda sparse, I interpolated (linear, rounded to 0 decimal
 I made an assumption that ratings start at one at the beginning of the recording (user is not sick)
 and end with the last rating held to the end.
 
+I need to unpack the controller buttonpress ints into several columns
+why? theyre bit-masks for what button is touched/pressed.
+
 ## Loading Data
 ZFP is a nightmare to load if the files don't have headers, which they don't.
 I emailed the guy listed as the designated contact(feb 12), so help me god they get back to me.
@@ -62,3 +65,14 @@ Then was the controllers, I needed to dump a bunch of rows and columns, then nee
 Then the pose, which was a collection of both problems from camera and control.
 These three are the numeric inputs (X_n).
 Load_images was straightforward, mostly copy-paste from last time(autoencodevr), though this time more efficient since I read the tensorflow docs more closely.
+Had to make sure that I dont output a list from map functions but a tensor, since a list gets a tensor of all elements(which are also tensors) instad of a tensor of just the values.
+
+## Model Creation
+Im just following a tutorial on the keras site.
+Three conv1d layers, relu activaton, batch normalization.
+Gloabl average pooling and dense at the end.
+
+conv layers are +2 of the dim they are labeled(1d -> x by t by batch)
+so I had to double batch the dataset.
+I still have to do some shit to fix the labels because those are fucked.
+PAIN
