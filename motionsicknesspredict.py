@@ -5,12 +5,13 @@ import numpy as np
 from tensorflow import keras
 import re
 
-DEBUG = False
+DEBUG = True
+period = int((1 * 60) / 3)  # (second*frames_per_seconds)/pooling_rate
 
 
 def dataset_dict_to_rows(dataset: tf.data.Dataset) -> tf.data.Dataset:
     """Remap tensor of tensor of (key, value) pairs to a tensor of values."""
-    return dataset.map(lambda r: [v for _, v in r.items()])
+    return dataset.map(lambda r: [v for _, v in r.items()], num_parallel_calls=tf.data.AUTOTUNE)
 
 
 def load_camera(recording_path: str) -> tf.data.Dataset:
@@ -47,16 +48,15 @@ def load_camera(recording_path: str) -> tf.data.Dataset:
     camera = tf.data.Dataset.from_tensor_slices(dict(camera_df))
     camera = dataset_dict_to_rows(camera)
 
-    if DEBUG:
-        print("camera.csv[0:4]")
-        for row in camera.take(5):
-            print(f"  {[item.numpy() for item in row]}")
+    # print("camera.csv[0:4]")
+    # for row in camera.take(5):
+    #     print(f"  {[item.numpy() for item in row]}")
+
     return camera
 
 
 def load_control(recording_path: str) -> tf.data.Dataset:
     """Extract the controller data (button touch, button press, axis0-4x/y) from csv to a tf Dataset."""
-    # TODO: Extract button bitmasks to separate columns.
     control_df = pd.read_csv(recording_path + "/control.csv", header=0, )
     control_df = control_df.drop(
         control_df[(control_df["framecounter"] % 3 != 0) | (control_df["framecounter"] == 0)].index)
@@ -73,12 +73,11 @@ def load_control(recording_path: str) -> tf.data.Dataset:
 
         return new_row
 
-    control_tensor = dataset_dict_to_rows(control_tensor).batch(3).map(reformat_control)
+    control_tensor = dataset_dict_to_rows(control_tensor).batch(3).map(reformat_control, num_parallel_calls=tf.data.AUTOTUNE)
 
-    if DEBUG:
-        print("control.csv[0:4]")
-        for row in control_tensor.take(5):
-            print(f"  {[item.numpy() for item in row]}")
+    # print("control.csv[0:4]")
+    # for row in control_tensor.take(5):
+    #     print(f"  {[item.numpy() for item in row]}")
 
     return control_tensor
 
@@ -120,12 +119,11 @@ def load_pose(recording_path: str) -> tf.data.Dataset:
 
         return new_row
 
-    pose_tensor = dataset_dict_to_rows(pose_tensor).batch(3).map(reformat_pose)
+    pose_tensor = dataset_dict_to_rows(pose_tensor).batch(3).map(reformat_pose, num_parallel_calls=tf.data.AUTOTUNE)
 
-    if DEBUG:
-        print("pose.csv[0:4]")
-        for row in pose_tensor.take(5):
-            print(f"  {[item.numpy() for item in row]}")
+    # print("pose.csv[0:4]")
+    # for row in pose_tensor.take(5):
+    #     print(f"  {[item.numpy() for item in row]}")
 
     return pose_tensor
 
@@ -149,26 +147,36 @@ def load_numeric(recording_path: str) -> tf.data.Dataset:
 
         return tf.convert_to_tensor(num, dtype=tf.float64)
 
-    numeric = numeric.map(unpack_numeric)
+    numeric = numeric.map(unpack_numeric, num_parallel_calls=tf.data.AUTOTUNE).batch(period)
 
-    if DEBUG:
-        print("Numeric[0:4]")
-        for row in numeric.take(5):
-            print(f"  {[item.numpy() for item in row]}")
+    # print("Numeric[0:4]")
+    # for row in numeric.take(5):
+    #     print(f"  {[item.numpy() for item in row]}")
 
     return numeric
 
 
 def load_voice(recording_path: str) -> tf.data.Dataset:
     """Extract voice(motion sickness rating) from csv to tf Dataset."""
-    voice_col_types = [tf.int32]
-    voice = tf.data.experimental.CsvDataset(recording_path + "/voice_preproc.csv", voice_col_types,
-                                            select_cols=[2], header=True)
-    if DEBUG:
-        print("voice_preproc.csv[0:4]")
-        for row in voice.take(5):
-            print(f"  {[item.numpy() for item in row]}")
-    return voice
+    voice_df = pd.read_csv(recording_path + "/voice_preproc.csv", header=0)
+    voice_df = voice_df.drop(["nearest_frame", "timestamp", "method"], axis=1)
+    voice_tensor = tf.data.Dataset.from_tensor_slices(dict(voice_df))
+    voice_tensor = dataset_dict_to_rows(voice_tensor)
+    voice_tensor = voice_tensor.batch(period)
+
+    @tf.function
+    def reformat_voice(ratings):
+        """Reduce the batch to just its mean, and represent mean rating as a one-hot tensor."""
+        return tf.one_hot(tf.math.reduce_mean(ratings)-1, 5) # Ratings are [1,5], -1 to put in range [0,4]
+
+    voice_tensor = voice_tensor.map(reformat_voice, num_parallel_calls=tf.data.AUTOTUNE)
+
+
+    # print("voice_preproc.csv[0:4]")
+    # for row in voice_tensor.take(5):
+    #     print(f"  {[item.numpy() for item in row]}")
+
+    return voice_tensor
 
 
 def load_images(path: str) -> tf.data.Dataset:
@@ -179,7 +187,7 @@ def load_images(path: str) -> tf.data.Dataset:
         i = tf.io.decode_image(i, dtype=tf.float32)
         return i
 
-    images_dataset = images_dataset.map(decode_img)
+    images_dataset = images_dataset.map(decode_img, num_parallel_calls=tf.data.AUTOTUNE)
 
     if DEBUG:
         print("s#######[0]")
@@ -205,9 +213,9 @@ def load_dataset(paths: list[str]) -> tuple[tf.data.Dataset, tf.data.Dataset]:
     return x, y
 
 
-def test_train_split(x: tf.data.Dataset, y: tf.data.Dataset, split=0.8, batch=200) -> tuple:
+def test_train_split(x: tf.data.Dataset, y: tf.data.Dataset, split=0.8, batchsize=5) -> tuple:
     """
-    Generate a train and test split for a dataset.
+    Generate a train and test split for a dataset and convert rows to sets of the same number of steps.
 
     x and y must be the same length
     """
@@ -215,12 +223,12 @@ def test_train_split(x: tf.data.Dataset, y: tf.data.Dataset, split=0.8, batch=20
     l_train = int(l * split)
     l_test = l - l_train
 
-    x_train = x.take(l_train)
-    x_test = x.take(l_test)
-    y_train = y.take(l_train)
-    y_test = y.take(l_test)
+    x_train = x.take(l_train).batch(batchsize)
+    x_test = x.take(l_test).batch(batchsize)
+    y_train = y.take(l_train).batch(batchsize)
+    y_test = y.take(l_test).batch(batchsize)
 
-    return tf.data.Dataset.zip(x_train, y_train).batch(batch).batch(10), tf.data.Dataset.zip(x_test, y_test).batch(batch).batch(10)
+    return tf.data.Dataset.zip(x_train, y_train), tf.data.Dataset.zip(x_test, y_test)
 
 
 def make_numeric_model(input_shape) -> keras.Model:
@@ -275,7 +283,8 @@ if __name__ == "__main__":
     rating = load_voice(
         '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Pottery/P22 VRLOG-6061422')
 
-    train, test = test_train_split(numeric, rating)
+    train, test = test_train_split(numeric, rating,  split=0.5, batchsize=5)
+
 
     callbacks = [
         keras.callbacks.ModelCheckpoint(
@@ -287,14 +296,16 @@ if __name__ == "__main__":
         keras.callbacks.EarlyStopping(monitor="val_loss", patience=50, verbose=1)
     ]
 
-    numeric_model = make_numeric_model((None, 116))
+    numeric_model = make_numeric_model((period, 116))
+    print(numeric_model.summary())
     numeric_model.compile(optimizer="adam",
-                          loss="sparse_categorical_crossentropy",
-                          #metrics=["sparse_catagorical_accuracy"],
+                          loss="categorical_crossentropy",
+                          metrics=["categorical_accuracy"]
                           )
     hist = numeric_model.fit(x=train,
-                             epochs=5,
-                             #callbacks=callbacks,
+                             epochs=100,
+                             callbacks=callbacks,
+                             validation_data=test,
                              verbose=1
                              )
     numeric_model.evaluate(test)

@@ -43,9 +43,9 @@ Using Pillow(python library) to flip images and resize them to half-resolution.
 I also need to either crop them in or double them for the two/one eye problem.
 If I double the "one-eyes" I might flip the opposite eye.
 
-Went to the motionsickness ratings in each recording's voice.csv and did some preprocessing.
+Went to the motion-sickness ratings in each recording's voice.csv and did some preprocessing.
 Using camera.csv as a template, I added the nearest frame to each rating and expanded over the entire recording.
-Timestamps now folow those in camera.csv as well.
+Timestamps now follow those in camera.csv as well.
 Since the ratings are kinda sparse, I interpolated (linear, rounded to 0 decimals) between each rating given.
 I made an assumption that ratings start at one at the beginning of the recording (user is not sick)
 and end with the last rating held to the end.
@@ -57,8 +57,24 @@ Haven't heard back yet, emailed again, but to a different email they have listed
 
 Loading each csv file into pandas and then converting it to a nicer format.
 First was voice, easy enough, grab the rating from voice_preproc.csv
-Next was camera, had to do some things to convert the projection and view matricies since they were strings.
+Next was camera, had to do some things to convert the projection and view matrices since they were strings.
 Then was the controllers, I needed to dump a bunch of rows and columns, then needed to merge three rows into one.
 Then the pose, which was a collection of both problems from camera and control.
 These three are the numeric inputs (X_n).
 Load_images was straightforward, mostly copy-paste from last time(autoencodevr), though this time more efficient since I read the tensorflow docs more closely.
+
+
+The ratings (labels/targets) are assigned for each set of steps (like a chunk of the time to slide a window over).
+I set the chunk to be some number of seconds(1), but I needed to convert that to frames since each row of data is a frame and div by how often a frame is recorded.
+This left steps = 1 * 60(fps)/3(every frame polled)
+I then converted the ratings from 1-5 to a one_hot_encoding.
+
+I cannot figure out why, but logits shape(network output) is always [batch size, classes] which makes sense.
+But the labels are instead [batch size*classes] for some reason.
+I'm batching the labels and inputs the same, I don't understand, sending an email to memo.
+So, it's the loss function, using categorical_crossentropy instead, IDK.
+
+## Training model
+Set the train-test split to 0.8, wow that was bad, it was overwriting like hell.
+At 0.5 it's significantly better, 0.54 ish val_acc, IE it's more than 50% right where guessing would come up 20%.
+Not awful, could be better.
