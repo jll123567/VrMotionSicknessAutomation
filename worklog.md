@@ -62,6 +62,17 @@ Then was the controllers, I needed to dump a bunch of rows and columns, then nee
 Then the pose, which was a collection of both problems from camera and control.
 These three are the numeric inputs (X_n).
 Load_images was straightforward, mostly copy-paste from last time(autoencodevr), though this time more efficient since I read the tensorflow docs more closely.
+Had to make sure that I dont output a list from map functions but a tensor, since a list gets a tensor of all elements(which are also tensors) instad of a tensor of just the values.
+
+## Model Creation
+Im just following a tutorial on the keras site.
+Three conv1d layers, relu activaton, batch normalization.
+Gloabl average pooling and dense at the end.
+
+conv layers are +2 of the dim they are labeled(1d -> x by t by batch)
+so I had to double batch the dataset.
+I still have to do some shit to fix the labels because those are fucked.
+PAIN
 
 
 The ratings (labels/targets) are assigned for each set of steps (like a chunk of the time to slide a window over).
