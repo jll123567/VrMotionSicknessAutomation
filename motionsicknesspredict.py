@@ -334,24 +334,24 @@ if __name__ == "__main__":
     rating = load_voice(
         '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Pottery/P22 VRLOG-6061422')
 
-    train, test = test_train_split(numeric, rating, split=0.5, batchsize=2)
+    train, test = test_train_split(image, rating, split=0.5, batchsize=2)
 
-    numeric_model, numeric_callbacks = make_numeric_model((period, 116))
-    numeric_hist = numeric_model.fit(x=train,
-                                     epochs=100,
-                                     callbacks=numeric_callbacks,
-                                     validation_data=test,
-                                     verbose=1
-                                     )
-    numeric_model.evaluate(test)
+    # numeric_model, numeric_callbacks = make_numeric_model((period, 116))
+    # numeric_hist = numeric_model.fit(x=train,
+    #                                  epochs=100,
+    #                                  callbacks=numeric_callbacks,
+    #                                  validation_data=test,
+    #                                  verbose=1
+    #                                  )
+    # numeric_model.evaluate(test)
 
-    # image_model, image_callbacks = make_image_model((period, img_size[0], img_size[1], 3))
-    # image_hist = image_model.fit(x=train,
-    #                                epochs=100,
-    #                                callbacks=image_callbacks,
-    #                                validation_data=test,
-    #                                verbose=1
-    #                                )
-    # image_model.evaluate(test)
+    image_model, image_callbacks = make_image_model((period, img_size[0], img_size[1], 3))
+    image_hist = image_model.fit(x=train,
+                                   epochs=100,
+                                   callbacks=image_callbacks,
+                                   validation_data=test,
+                                   verbose=1
+                                   )
+    image_model.evaluate(test)
 
     pass

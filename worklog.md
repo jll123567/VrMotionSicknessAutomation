@@ -98,4 +98,5 @@ Numeric gets 0.55 ish accuracy with these settings.
 
 WHY DO I NOT HAVE CUDA!?
 I didn't notice at first since the numeric data was easy, but with images I need cuda working.
-F U N.
+Updated nvidia drivers to 550, re-installed cuda stuff,
+then forced the script run with the CUDNN_PATH and LD_LIBRARY_PATH envvars.
