@@ -62,7 +62,7 @@ Then was the controllers, I needed to dump a bunch of rows and columns, then nee
 Then the pose, which was a collection of both problems from camera and control.
 These three are the numeric inputs (X_n).
 Load_images was straightforward, mostly copy-paste from last time(autoencodevr), though this time more efficient since I read the tensorflow docs more closely.
-Had to make sure that I don't output a list from map functions but a tensor, since a list gets a tensor of all elements(which are also tensors) instad of a tensor of just the values.
+Had to make sure that I don't output a list from map functions but a tensor, since a list gets a tensor of all elements (which are also tensors) instead of a tensor of just the values.
 
 ## Model Creation
 I'm just following a tutorial on the keras site.
@@ -83,7 +83,19 @@ But the labels are instead [batch size*classes] for some reason.
 I'm batching the labels and inputs the same, I don't understand, sending an email to memo.
 So, it's the loss function, using categorical_crossentropy instead, IDK.
 
+Getting images to work wasn't too bad, I just had to up the dimensions for the images(1d to 3d).
+
 ## Training model
 Set the train-test split to 0.8, wow that was bad, it was overwriting like hell.
 At 0.5 it's significantly better, 0.54 ish val_acc, IE it's more than 50% right where guessing would come up 20%.
 Not awful, could be better.
+
+For images, I need to reduce the period and batches and resolution I don't have enough RAM.
+My ram limit is about 45g anything more, and the model won't load into VRAM.
+The Numeric model is about a gig, and the image is about 39 when the period is 3,
+batch-size is 2, and the image scale is 1/4.
+Numeric gets 0.55 ish accuracy with these settings.
+
+WHY DO I NOT HAVE CUDA!?
+I didn't notice at first since the numeric data was easy, but with images I need cuda working.
+F U N.

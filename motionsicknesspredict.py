@@ -1,12 +1,25 @@
+from typing import Tuple, List
+
 import tensorflow as tf
 import tensorboard
 import pandas as pd
 import numpy as np
+from keras import Model
+from keras.src.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
 from tensorflow import keras
 import re
+import decimal
 
 DEBUG = True
-period = int((1 * 60) / 3)  # (second*frames_per_seconds)/pooling_rate
+period = int((3 * 60) / 3)  # (second*frames_per_seconds)/pooling_rate
+downscale_ratio = 4  # How far to downscale images from original size, must be power of 2
+
+# Round image dimensions similar to tf.decode_jpeg's rounding.
+img_x = int(decimal.Decimal(525/downscale_ratio).quantize(decimal.Decimal('1'), rounding=decimal.ROUND_HALF_UP))
+img_y = int(decimal.Decimal(1024/downscale_ratio).quantize(decimal.Decimal('1'), rounding=decimal.ROUND_HALF_UP))
+
+img_size = (img_x, img_y)  # Size of images, they may need to be small(original 525,1024).
+
 
 
 def dataset_dict_to_rows(dataset: tf.data.Dataset) -> tf.data.Dataset:
@@ -73,7 +86,8 @@ def load_control(recording_path: str) -> tf.data.Dataset:
 
         return new_row
 
-    control_tensor = dataset_dict_to_rows(control_tensor).batch(3).map(reformat_control, num_parallel_calls=tf.data.AUTOTUNE)
+    control_tensor = dataset_dict_to_rows(control_tensor).batch(3).map(reformat_control,
+                                                                       num_parallel_calls=tf.data.AUTOTUNE)
 
     # print("control.csv[0:4]")
     # for row in control_tensor.take(5):
@@ -167,10 +181,9 @@ def load_voice(recording_path: str) -> tf.data.Dataset:
     @tf.function
     def reformat_voice(ratings):
         """Reduce the batch to just its mean, and represent mean rating as a one-hot tensor."""
-        return tf.one_hot(tf.math.reduce_mean(ratings)-1, 5) # Ratings are [1,5], -1 to put in range [0,4]
+        return tf.one_hot(tf.math.reduce_mean(ratings) - 1, 5)  # Ratings are [1,5], -1 to put in range [0,4]
 
     voice_tensor = voice_tensor.map(reformat_voice, num_parallel_calls=tf.data.AUTOTUNE)
-
 
     # print("voice_preproc.csv[0:4]")
     # for row in voice_tensor.take(5):
@@ -182,17 +195,19 @@ def load_voice(recording_path: str) -> tf.data.Dataset:
 def load_images(path: str) -> tf.data.Dataset:
     images_dataset = tf.data.Dataset.list_files(path + "/s*.jpg", shuffle=False)
 
+    @tf.function
     def decode_img(img_fp: str) -> tf.Tensor:
         i = tf.io.read_file(img_fp)
-        i = tf.io.decode_image(i, dtype=tf.float32)
+        i = tf.io.decode_jpeg(i, ratio=downscale_ratio)
+        i = tf.cast(i, tf.float32)/255  # /255 so values are range [0,1]
         return i
 
-    images_dataset = images_dataset.map(decode_img, num_parallel_calls=tf.data.AUTOTUNE)
+    images_dataset = images_dataset.map(decode_img, num_parallel_calls=2).batch(period)
 
-    if DEBUG:
-        print("s#######[0]")
-        for img in images_dataset.take(1):
-            print(f"  {img.numpy()}")
+    print("s#######[0]")
+    for img in images_dataset.take(1):
+        i_np = img.numpy()
+        print(f"  {i_np}")
 
     return images_dataset
 
@@ -231,7 +246,7 @@ def test_train_split(x: tf.data.Dataset, y: tf.data.Dataset, split=0.8, batchsiz
     return tf.data.Dataset.zip(x_train, y_train), tf.data.Dataset.zip(x_test, y_test)
 
 
-def make_numeric_model(input_shape) -> keras.Model:
+def make_numeric_model(input_shape) -> tuple[Model, list[ModelCheckpoint | ReduceLROnPlateau | EarlyStopping]]:
     input_layer = keras.layers.Input(input_shape)
 
     conv1 = keras.layers.Conv1D(filters=64, kernel_size=3, padding="same")(input_layer)
@@ -251,10 +266,27 @@ def make_numeric_model(input_shape) -> keras.Model:
     output_layer = keras.layers.Dense(5, activation="softmax")(
         gap)  # units is 5 since there are five classes(rating 1-5)
 
-    return keras.Model(inputs=input_layer, outputs=output_layer, name="Numeric_Convolution_Model")
+    callbacks = [
+        keras.callbacks.ModelCheckpoint(
+            "checkpoints/best_model_numeric.keras", save_best_only=True, monitor="val_loss"
+        ),
+        keras.callbacks.ReduceLROnPlateau(
+            monitor="val_loss", factor=0.5, patience=20, min_lr=0.0001
+        ),
+        keras.callbacks.EarlyStopping(monitor="val_loss", patience=50, verbose=1)
+    ]
+
+    numeric_model = keras.Model(inputs=input_layer, outputs=output_layer, name="Numeric_Convolution_Model")
+    print(numeric_model.summary())
+    numeric_model.compile(optimizer="adam",
+                          loss="categorical_crossentropy",
+                          metrics=["categorical_accuracy"]
+                          )
+
+    return numeric_model, callbacks
 
 
-def make_image_model(input_shape) -> keras.Model:
+def make_image_model(input_shape) -> tuple[Model, list[ModelCheckpoint | ReduceLROnPlateau | EarlyStopping]]:
     input_layer = keras.layers.Input(input_shape)
 
     conv1 = keras.layers.Conv3D(filters=64, kernel_size=3, padding="same")(input_layer)
@@ -269,26 +301,14 @@ def make_image_model(input_shape) -> keras.Model:
     conv3 = keras.layers.BatchNormalization()(conv3)
     conv3 = keras.layers.ReLU()(conv3)
 
-    gap = keras.layers.GlobalAveragePooling1D()(conv3)
+    gap = keras.layers.GlobalAveragePooling3D()(conv3)
 
     output_layer = keras.layers.Dense(5, activation="softmax")(
         gap)  # units is 5 since there are five classes(rating 1-5)
 
-    return keras.Model(inputs=input_layer, outputs=output_layer, name="Image_Convolution_Model")
-
-
-if __name__ == "__main__":
-    numeric = load_numeric(
-        '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Pottery/P22 VRLOG-6061422')
-    rating = load_voice(
-        '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Pottery/P22 VRLOG-6061422')
-
-    train, test = test_train_split(numeric, rating,  split=0.5, batchsize=5)
-
-
     callbacks = [
         keras.callbacks.ModelCheckpoint(
-            "checkpoints/best_model.keras", save_best_only=True, monitor="val_loss"
+            "checkpoints/best_model_image.keras", save_best_only=True, monitor="val_loss"
         ),
         keras.callbacks.ReduceLROnPlateau(
             monitor="val_loss", factor=0.5, patience=20, min_lr=0.0001
@@ -296,18 +316,42 @@ if __name__ == "__main__":
         keras.callbacks.EarlyStopping(monitor="val_loss", patience=50, verbose=1)
     ]
 
-    numeric_model = make_numeric_model((period, 116))
-    print(numeric_model.summary())
-    numeric_model.compile(optimizer="adam",
-                          loss="categorical_crossentropy",
-                          metrics=["categorical_accuracy"]
-                          )
-    hist = numeric_model.fit(x=train,
-                             epochs=100,
-                             callbacks=callbacks,
-                             validation_data=test,
-                             verbose=1
-                             )
+    image_model = keras.Model(inputs=input_layer, outputs=output_layer, name="Image_Convolution_Model")
+    print(image_model.summary())
+    image_model.compile(optimizer="adam",
+                        loss="categorical_crossentropy",
+                        metrics=["categorical_accuracy"]
+                        )
+
+    return image_model, callbacks
+
+
+if __name__ == "__main__":
+    numeric = load_numeric(
+        '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Pottery/P22 VRLOG-6061422')
+    image = load_images(
+        '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Pottery/P22 VRLOG-6061422')
+    rating = load_voice(
+        '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Pottery/P22 VRLOG-6061422')
+
+    train, test = test_train_split(numeric, rating, split=0.5, batchsize=2)
+
+    numeric_model, numeric_callbacks = make_numeric_model((period, 116))
+    numeric_hist = numeric_model.fit(x=train,
+                                     epochs=100,
+                                     callbacks=numeric_callbacks,
+                                     validation_data=test,
+                                     verbose=1
+                                     )
     numeric_model.evaluate(test)
+
+    # image_model, image_callbacks = make_image_model((period, img_size[0], img_size[1], 3))
+    # image_hist = image_model.fit(x=train,
+    #                                epochs=100,
+    #                                callbacks=image_callbacks,
+    #                                validation_data=test,
+    #                                verbose=1
+    #                                )
+    # image_model.evaluate(test)
 
     pass
