@@ -85,6 +85,8 @@ So, it's the loss function, using categorical_crossentropy instead, IDK.
 
 Getting images to work wasn't too bad, I just had to up the dimensions for the images(1d to 3d).
 
+I'm combining the numeric and image models with a concatenate layer and then three dense layers.
+
 ## Training model
 Set the train-test split to 0.8, wow that was bad, it was overwriting like hell.
 At 0.5 it's significantly better, 0.54 ish val_acc, IE it's more than 50% right where guessing would come up 20%.

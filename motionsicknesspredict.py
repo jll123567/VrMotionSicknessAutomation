@@ -325,6 +325,58 @@ def make_image_model(input_shape) -> tuple[Model, list[ModelCheckpoint | ReduceL
 
     return image_model, callbacks
 
+def make_full_model(num_input_shape, img_input_shape) -> tuple[Model, list[ModelCheckpoint | ReduceLROnPlateau | EarlyStopping]]:
+    num_input_layer = keras.layers.Input(num_input_shape)
+    num_conv1 = keras.layers.Conv1D(filters=64, kernel_size=3, padding="same")(num_input_layer)
+    num_conv1 = keras.layers.BatchNormalization()(num_conv1)
+    num_conv1 = keras.layers.ReLU()(num_conv1)
+    num_conv2 = keras.layers.Conv1D(filters=64, kernel_size=3, padding="same")(num_conv1)
+    num_conv2 = keras.layers.BatchNormalization()(num_conv2)
+    num_conv2 = keras.layers.ReLU()(num_conv2)
+    num_conv3 = keras.layers.Conv1D(filters=64, kernel_size=3, padding="same")(num_conv2)
+    num_conv3 = keras.layers.BatchNormalization()(num_conv3)
+    num_conv3 = keras.layers.ReLU()(num_conv3)
+    num_gap = keras.layers.GlobalAveragePooling1D()(num_conv3)
+    num_output_layer = keras.layers.Dense(5, activation="softmax")(num_gap)
+
+    img_input_layer = keras.layers.Input(img_input_shape)
+    img_conv1 = keras.layers.Conv3D(filters=64, kernel_size=3, padding="same")(img_input_layer)
+    img_conv1 = keras.layers.BatchNormalization()(img_conv1)
+    img_conv1 = keras.layers.ReLU()(img_conv1)
+    img_conv2 = keras.layers.Conv3D(filters=64, kernel_size=3, padding="same")(img_conv1)
+    img_conv2 = keras.layers.BatchNormalization()(img_conv2)
+    img_conv2 = keras.layers.ReLU()(img_conv2)
+    img_conv3 = keras.layers.Conv3D(filters=64, kernel_size=3, padding="same")(img_conv2)
+    img_conv3 = keras.layers.BatchNormalization()(img_conv3)
+    img_conv3 = keras.layers.ReLU()(img_conv3)
+    img_gap = keras.layers.GlobalAveragePooling3D()(img_conv3)
+    img_output_layer = keras.layers.Dense(5, activation="softmax")(img_gap)
+
+    comb = keras.layers.Concatenate()([num_output_layer, img_output_layer])
+    comb = keras.layers.Dense(32)(comb)
+    comb = keras.layers.Dense(16)(comb)
+    comb = keras.layers.Dense(8)(comb)
+    full_out = keras.layers.Dense(5, activation="softmax")(comb)
+
+    full_model = keras.Model(inputs=[num_input_layer, img_input_layer], outputs=full_out, name="Full_Model")
+    print(full_model.summary())
+    full_model.compile(optimizer="adam",
+                        loss="categorical_crossentropy",
+                        metrics=["categorical_accuracy"]
+                        )
+
+    callbacks = [
+        keras.callbacks.ModelCheckpoint(
+            "checkpoints/best_model_full.keras", save_best_only=True, monitor="val_loss"
+        ),
+        keras.callbacks.ReduceLROnPlateau(
+            monitor="val_loss", factor=0.5, patience=20, min_lr=0.0001
+        ),
+        keras.callbacks.EarlyStopping(monitor="val_loss", patience=50, verbose=1)
+    ]
+
+    return full_model, callbacks
+
 
 if __name__ == "__main__":
     numeric = load_numeric(
@@ -345,13 +397,23 @@ if __name__ == "__main__":
     #                                  )
     # numeric_model.evaluate(test)
 
-    image_model, image_callbacks = make_image_model((period, img_size[0], img_size[1], 3))
-    image_hist = image_model.fit(x=train,
-                                   epochs=100,
-                                   callbacks=image_callbacks,
-                                   validation_data=test,
-                                   verbose=1
-                                   )
-    image_model.evaluate(test)
+    # image_model, image_callbacks = make_image_model((period, img_size[0], img_size[1], 3))
+    # image_hist = image_model.fit(x=train,
+    #                                epochs=100,
+    #                                callbacks=image_callbacks,
+    #                                validation_data=test,
+    #                                verbose=1
+    #                                )
+    # image_model.evaluate(test)
+
+    full_model, full_callbacks = make_full_model((period, 116), (period, img_size[0], img_size[1], 3))
+    full_hist = full_model.fit(x=[numeric, image],
+                               y=rating,
+                                 epochs=100,
+                                 callbacks=full_callbacks,
+                                 validation_data=test,
+                                 verbose=1
+                                 )
+    full_model.evaluate(test)
 
     pass
