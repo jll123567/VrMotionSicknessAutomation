@@ -102,3 +102,6 @@ WHY DO I NOT HAVE CUDA!?
 I didn't notice at first since the numeric data was easy, but with images I need cuda working.
 Updated nvidia drivers to 550, re-installed cuda stuff,
 then forced the script run with the CUDNN_PATH and LD_LIBRARY_PATH envvars.
+
+Got 30% accuracy on a full run, not great... gonna shuffle, make a bigger split(0.8), and make period larger(5s)
+holy! 80% accuracy!
