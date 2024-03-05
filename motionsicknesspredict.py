@@ -15,11 +15,10 @@ period = int((3 * 60) / 3)  # (second*frames_per_seconds)/pooling_rate
 downscale_ratio = 4  # How far to downscale images from original size, must be power of 2
 
 # Round image dimensions similar to tf.decode_jpeg's rounding.
-img_x = int(decimal.Decimal(525/downscale_ratio).quantize(decimal.Decimal('1'), rounding=decimal.ROUND_HALF_UP))
-img_y = int(decimal.Decimal(1024/downscale_ratio).quantize(decimal.Decimal('1'), rounding=decimal.ROUND_HALF_UP))
+img_x = int(decimal.Decimal(525 / downscale_ratio).quantize(decimal.Decimal('1'), rounding=decimal.ROUND_HALF_UP))
+img_y = int(decimal.Decimal(1024 / downscale_ratio).quantize(decimal.Decimal('1'), rounding=decimal.ROUND_HALF_UP))
 
 img_size = (img_x, img_y)  # Size of images, they may need to be small(original 525,1024).
-
 
 
 def dataset_dict_to_rows(dataset: tf.data.Dataset) -> tf.data.Dataset:
@@ -199,7 +198,7 @@ def load_images(path: str) -> tf.data.Dataset:
     def decode_img(img_fp: str) -> tf.Tensor:
         i = tf.io.read_file(img_fp)
         i = tf.io.decode_jpeg(i, ratio=downscale_ratio)
-        i = tf.cast(i, tf.float32)/255  # /255 so values are range [0,1]
+        i = tf.cast(i, tf.float32) / 255  # /255 so values are range [0,1]
         return i
 
     images_dataset = images_dataset.map(decode_img, num_parallel_calls=2).batch(period)
@@ -325,7 +324,9 @@ def make_image_model(input_shape) -> tuple[Model, list[ModelCheckpoint | ReduceL
 
     return image_model, callbacks
 
-def make_full_model(num_input_shape, img_input_shape) -> tuple[Model, list[ModelCheckpoint | ReduceLROnPlateau | EarlyStopping]]:
+
+def make_full_model(num_input_shape, img_input_shape) -> tuple[
+    Model, list[ModelCheckpoint | ReduceLROnPlateau | EarlyStopping]]:
     num_input_layer = keras.layers.Input(num_input_shape)
     num_conv1 = keras.layers.Conv1D(filters=64, kernel_size=3, padding="same")(num_input_layer)
     num_conv1 = keras.layers.BatchNormalization()(num_conv1)
@@ -361,9 +362,9 @@ def make_full_model(num_input_shape, img_input_shape) -> tuple[Model, list[Model
     full_model = keras.Model(inputs=[num_input_layer, img_input_layer], outputs=full_out, name="Full_Model")
     print(full_model.summary())
     full_model.compile(optimizer="adam",
-                        loss="categorical_crossentropy",
-                        metrics=["categorical_accuracy"]
-                        )
+                       loss="categorical_crossentropy",
+                       metrics=["categorical_accuracy"]
+                       )
 
     callbacks = [
         keras.callbacks.ModelCheckpoint(
@@ -386,7 +387,9 @@ if __name__ == "__main__":
     rating = load_voice(
         '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Pottery/P22 VRLOG-6061422')
 
-    train, test = test_train_split(image, rating, split=0.5, batchsize=2)
+    x = tf.data.Dataset.zip(numeric, image)
+
+    train, test = test_train_split(x, rating, split=0.5, batchsize=2)
 
     # numeric_model, numeric_callbacks = make_numeric_model((period, 116))
     # numeric_hist = numeric_model.fit(x=train,
@@ -407,13 +410,12 @@ if __name__ == "__main__":
     # image_model.evaluate(test)
 
     full_model, full_callbacks = make_full_model((period, 116), (period, img_size[0], img_size[1], 3))
-    full_hist = full_model.fit(x=[numeric, image],
-                               y=rating,
-                                 epochs=100,
-                                 callbacks=full_callbacks,
-                                 validation_data=test,
-                                 verbose=1
-                                 )
+    full_hist = full_model.fit(x=train,
+                               epochs=100,
+                               callbacks=full_callbacks,
+                               validation_data=test,
+                               verbose=1
+                               )
     full_model.evaluate(test)
 
     pass
