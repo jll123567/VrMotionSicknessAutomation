@@ -368,13 +368,13 @@ def make_full_model(num_input_shape, img_input_shape) -> tuple[
 
     callbacks = [
         keras.callbacks.ModelCheckpoint(
-            "checkpoints/3_5_24_model_full.keras", save_best_only=True, monitor="val_loss"
+            "checkpoints/3_6_24_model_full.keras", save_best_only=True, monitor="val_loss"
         ),
         keras.callbacks.ReduceLROnPlateau(
             monitor="val_loss", factor=0.5, patience=20, min_lr=0.0001
         ),
         keras.callbacks.EarlyStopping(monitor="val_loss", patience=50, verbose=1),
-        keras.callbacks.TensorBoard(log_dir='./logs', histogram_freq=1)
+        keras.callbacks.TensorBoard(log_dir='./logs/6_3_24_full', histogram_freq=1)
     ]
 
     return full_model, callbacks
@@ -411,11 +411,11 @@ if __name__ == "__main__":
 
     full_model, full_callbacks = make_full_model((period, 116), (period, img_size[0], img_size[1], 3))
     full_hist = full_model.fit(x=train,
-                               epochs=100,
+                               epochs=250,
                                callbacks=full_callbacks,
                                validation_data=test,
                                verbose=1
                                )
     full_model.evaluate(test)
 
-    pass
+    input("Training Finished. Press enter to quit.")
