@@ -381,15 +381,15 @@ def make_full_model(num_input_shape, img_input_shape) -> tuple[
 
 
 if __name__ == "__main__":
-    x, y = load_dataset([
-        '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Pottery/P22 VRLOG-6061422',
-        '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Epic_Roller_Coasters/P18 VRLOG-6051213',
-        '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Mini_Motor_Racing/P23 VRLOG-6061400',
-        '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/VR_Rome/P9 VRLOG-5091805',
-        '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Beat_Saber/P4 VRLOG-5051047'
-    ])
-
-    train, test = test_train_split(x, y, split=0.8, batchsize=2)
+    # x, y = load_dataset([
+    #     '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Pottery/P22 VRLOG-6061422',
+    #     '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Epic_Roller_Coasters/P18 VRLOG-6051213',
+    #     '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Mini_Motor_Racing/P23 VRLOG-6061400',
+    #     '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/VR_Rome/P9 VRLOG-5091805',
+    #     '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Beat_Saber/P4 VRLOG-5051047'
+    # ])
+    #
+    # train, test = test_train_split(x, y, split=0.8, batchsize=2)
 
     # numeric_model, numeric_callbacks = make_numeric_model((period, 116))
     # numeric_hist = numeric_model.fit(x=train,
@@ -410,12 +410,15 @@ if __name__ == "__main__":
     # image_model.evaluate(test)
 
     full_model, full_callbacks = make_full_model((period, 116), (period, img_size[0], img_size[1], 3))
-    full_hist = full_model.fit(x=train,
-                               epochs=250,
-                               callbacks=full_callbacks,
-                               validation_data=test,
-                               verbose=1
-                               )
-    full_model.evaluate(test)
+    # full_hist = full_model.fit(x=train,
+    #                            epochs=250,
+    #                            callbacks=full_callbacks,
+    #                            validation_data=test,
+    #                            verbose=1
+    #                            )
+    # full_model.evaluate(test)
+
+    full_model.load_weights("checkpoints/3_6_24_model_full.keras")
+    full_model.save("saved_models/3_6_24_model_full", save_format="tf")
 
     input("Training Finished. Press enter to quit.")
