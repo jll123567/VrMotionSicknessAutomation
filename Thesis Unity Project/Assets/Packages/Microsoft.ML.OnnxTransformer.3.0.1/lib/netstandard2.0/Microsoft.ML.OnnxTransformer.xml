@@ -1,0 +1,1911 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Microsoft.ML.OnnxTransformer</name>
+    </assembly>
+    <members>
+        <member name="T:Microsoft.ML.Transforms.Onnx.DnnImageModelSelector">
+            <summary>
+            Helper class for selecting a pre-trained DNN image featurization model to use in the <see cref="T:Microsoft.ML.Transforms.Onnx.DnnImageFeaturizerEstimator"/>.
+            </summary>
+            <seealso cref="M:Microsoft.ML.OnnxCatalog.DnnFeaturizeImage(Microsoft.ML.TransformsCatalog,System.String,System.Func{Microsoft.ML.Transforms.Onnx.DnnImageFeaturizerInput,Microsoft.ML.Data.EstimatorChain{Microsoft.ML.Transforms.ColumnCopyingTransformer}},System.String)"/>
+        </member>
+        <member name="T:Microsoft.ML.Transforms.Onnx.DnnImageFeaturizerInput">
+            <summary>
+            Helper class for storing all the inputs to an extension method on a <see cref="T:Microsoft.ML.Transforms.Onnx.DnnImageModelSelector"/> required to return
+            a chain of two <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator"/>.
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Transforms.Onnx.DnnImageFeaturizerEstimator">
+             <summary>
+             Applies a pre-trained deep neural network (DNN) model to featurize input image data.
+             </summary>
+             <remarks>
+             <format type="text/markdown"><![CDATA[
+            
+             ###  Estimator Characteristics
+             |  |  |
+             | -- | -- |
+             | Does this estimator need to look at the data to train its parameters? | No |
+             | Input column data type | Vector of <xref:System.Single> |
+             | Output column data type | Vector of <xref:System.Single>, the size of the vector depends on the pre-trained DNN |
+             | Exportable to ONNX | No |
+            
+             NuGet requirements:
+            	- Microsoft.ML.OnnxTransformer
+             - Microsoft.ML.OnnxRuntime.Gpu (only if GPU processing is used)
+             - Each pre-trained DNN model has a separate NuGet that must be included if that model is used:
+               - Microsoft.ML.DnnImageFeaturizer.AlexNet
+               - Microsoft.ML.DnnImageFeaturizer.ResNet18
+               - Microsoft.ML.DnnImageFeaturizer.ResNet50
+               - Microsoft.ML.DnnImageFeaturizer.ResNet101
+            
+             The resulting transformer creates a new column, named as specified in the output column name parameters,
+             where a pre-trained deep neural network is applied to the input image data.
+            
+             This estimator is a wrapper around a <xref:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator> with the current
+             available DNN pre-trained models and several <xref:Microsoft.ML.Transforms.ColumnCopyingEstimator>.
+             The <xref:Microsoft.ML.Transforms.ColumnCopyingEstimator> are needed to allow arbitrary column input and output
+             names, since otherwise the <xref:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator> would require the column names to match
+             the names of the ONNX model nodes.
+            
+             Any platform requirement for this estimator will follow the requirements on the <xref:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator>.
+            
+             Check the See Also section for links to usage examples.
+             ]]>
+             </format>
+             </remarks>
+             <seealso cref="M:Microsoft.ML.OnnxCatalog.DnnFeaturizeImage(Microsoft.ML.TransformsCatalog,System.String,System.Func{Microsoft.ML.Transforms.Onnx.DnnImageFeaturizerInput,Microsoft.ML.Data.EstimatorChain{Microsoft.ML.Transforms.ColumnCopyingTransformer}},System.String)"/>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.DnnImageFeaturizerEstimator.#ctor(Microsoft.ML.Runtime.IHostEnvironment,System.String,System.Func{Microsoft.ML.Transforms.Onnx.DnnImageFeaturizerInput,Microsoft.ML.Data.EstimatorChain{Microsoft.ML.Transforms.ColumnCopyingTransformer}},System.String)">
+            <summary>
+            Constructor for the estimator for a DnnImageFeaturizer transform.
+            </summary>
+            <param name="env">Host environment.</param>
+            <param name="modelFactory">An extension method on the <see cref="T:Microsoft.ML.Transforms.Onnx.DnnImageModelSelector"/> that creates a chain of two
+            <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator"/>s (one for preprocessing and one with a pretrained image DNN) with specific models
+            included in a package together with that extension method. It also contains three <see cref="T:Microsoft.ML.Transforms.ColumnCopyingEstimator"/>s
+            to allow arbitrary column naming, as the ONNXEstimators require very specific naming based on the models.
+            For an example, see Microsoft.ML.DnnImageFeaturizer.ResNet18 </param>
+            <param name="outputColumnName">Name of the column resulting from the transformation of <paramref name="inputColumnName"/>. The column data is a known-sized vector of <see cref="T:System.Single"/>.</param>
+            <param name="inputColumnName">Name of column to transform. If set to <see langword="null"/>, the value of the <paramref name="outputColumnName"/> will be used as source. The column data must be a known-sized vector of <see cref="T:System.Single"/>.</param>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.DnnImageFeaturizerEstimator.Fit(Microsoft.ML.IDataView)">
+            <summary>
+            Note that OnnxEstimator which this is based on is a trivial estimator, so this does not do any actual training,
+            just verifies the schema.
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Transforms.Onnx.OnnxMapType">
+            <summary>
+            The corresponding <see cref="P:Microsoft.ML.DataViewSchema.Column.Type"/> of ONNX's map type in <see cref="T:Microsoft.ML.IDataView"/>'s type system.
+            In other words, if an ONNX model produces a map, a column in <see cref="T:Microsoft.ML.IDataView"/> may be typed to <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxMapType"/>.
+            Its underlying type is <see cref="T:System.Collections.Generic.IDictionary`2"/>, where the generic type "TKey" and "TValue" are the input arguments of
+            <see cref="M:Microsoft.ML.Transforms.Onnx.OnnxMapType.#ctor(System.Type,System.Type)"/>.
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxMapType.#ctor(System.Type,System.Type)">
+            <summary>
+            Create the corresponding <see cref="T:Microsoft.ML.Data.DataViewType"/> for ONNX map.
+            </summary>
+            <param name="keyType">Key type of the associated ONNX map.</param>
+            <param name="valueType">Value type of the associated ONNX map.</param>
+        </member>
+        <member name="T:Microsoft.ML.Transforms.Onnx.OnnxMapTypeAttribute">
+            <summary>
+            To declare <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxMapType"/> column in <see cref="T:Microsoft.ML.IDataView"/> as a field
+            in a <see langword="class"/>, the associated field should be marked with <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxMapTypeAttribute"/>.
+            Its uses are similar to those of <see cref="T:Microsoft.ML.Data.VectorTypeAttribute"/> and other <see langword="class"/>es derived
+            from <see cref="T:Microsoft.ML.Data.DataViewTypeAttribute"/>.
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxMapTypeAttribute.#ctor">
+            <summary>
+            Create a map (aka dictionary) type.
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxMapTypeAttribute.#ctor(System.Type,System.Type)">
+            <summary>
+            Create a map (aka dictionary) type. A map is a collection of key-value
+            pairs. <paramref name="keyType"/> specifies the type of keys and <paramref name="valueType"/>
+            is the type of values.
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxMapTypeAttribute.Equals(Microsoft.ML.Data.DataViewTypeAttribute)">
+            <summary>
+            Map types with the same key type and the same value type should be equal.
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxMapTypeAttribute.GetHashCode">
+            <summary>
+            Produce the same hash code for map types with the same key type and the same value type.
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxMapTypeAttribute.Register">
+            <summary>
+            An implementation of <see cref="M:Microsoft.ML.Data.DataViewTypeAttribute.Register"/>.
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Transforms.Onnx.OnnxOptions">
+            <summary>
+            The options for an <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator"/>.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Transforms.Onnx.OnnxOptions.ModelFile">
+            <summary>
+            Path to the onnx model file.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Transforms.Onnx.OnnxOptions.InputColumns">
+            <summary>
+            Name of the input column.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Transforms.Onnx.OnnxOptions.OutputColumns">
+            <summary>
+            Name of the output column.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Transforms.Onnx.OnnxOptions.GpuDeviceId">
+            <summary>
+            GPU device id to run on (e.g. 0,1,..). Null for CPU. Requires CUDA 10.1.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Transforms.Onnx.OnnxOptions.FallbackToCpu">
+            <summary>
+            If true, resumes execution on CPU upon GPU error. If false, will raise the GPU exception.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Transforms.Onnx.OnnxOptions.ShapeDictionary">
+            <summary>
+            ONNX shapes to be used over those loaded from <see cref="F:Microsoft.ML.Transforms.Onnx.OnnxOptions.ModelFile"/>.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Transforms.Onnx.OnnxOptions.RecursionLimit">
+            <summary>
+            Protobuf CodedInputStream recursion limit.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Transforms.Onnx.OnnxOptions.InterOpNumThreads">
+            <summary>
+            Controls the number of threads used to parallelize the execution of the graph (across nodes).
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Transforms.Onnx.OnnxOptions.IntraOpNumThreads">
+            <summary>
+            Controls the number of threads to use to run the model.
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Transforms.Onnx.OnnxSequenceType">
+            <summary>
+            The corresponding <see cref="P:Microsoft.ML.DataViewSchema.Column.Type"/> of ONNX's sequence type in <see cref="T:Microsoft.ML.IDataView"/>'s type system.
+            In other words, if an ONNX model produces a sequence, a column in <see cref="T:Microsoft.ML.IDataView"/> may be typed to <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxSequenceType"/>.
+            Its underlying type is <see cref="T:System.Collections.Generic.IEnumerable`1"/>, where the generic type "T" is the input argument of
+            <see cref="M:Microsoft.ML.Transforms.Onnx.OnnxSequenceType.#ctor(System.Type)"/>.
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxSequenceType.#ctor(System.Type)">
+            <summary>
+            Create the corresponding <see cref="T:Microsoft.ML.Data.DataViewType"/> for ONNX sequence.
+            </summary>
+            <param name="elementType">The element type of a sequence.</param>
+        </member>
+        <member name="T:Microsoft.ML.Transforms.Onnx.OnnxSequenceTypeAttribute">
+            <summary>
+            To declare <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxSequenceType"/> column in <see cref="T:Microsoft.ML.IDataView"/> as a field
+            in a <see langword="class"/>, the associated field should be marked with <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxSequenceTypeAttribute"/>.
+            Its uses are similar to those of <see cref="T:Microsoft.ML.Data.VectorTypeAttribute"/> and other <see langword="class"/>es derived
+            from <see cref="T:Microsoft.ML.Data.DataViewTypeAttribute"/>.
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxSequenceTypeAttribute.#ctor(System.Type)">
+            <summary>
+            Create a <paramref name="elemType"/>-sequence type.
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxSequenceTypeAttribute.Equals(Microsoft.ML.Data.DataViewTypeAttribute)">
+            <summary>
+            Sequence types with the same element type should be equal.
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxSequenceTypeAttribute.GetHashCode">
+            <summary>
+            Produce the same hash code for sequence types with the same element type.
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxSequenceTypeAttribute.Register">
+            <summary>
+            An implementation of <see cref="M:Microsoft.ML.Data.DataViewTypeAttribute.Register"/>.
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Transforms.Onnx.OnnxTransformer">
+            <summary>
+            <see cref="T:Microsoft.ML.ITransformer"/> resulting from fitting an <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator"/>.
+            Please refer to <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator"/> to learn more about the necessary dependencies,
+            and how to run it on a GPU.
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Transforms.Onnx.OnnxTransformer.CustomShapeInfo">
+            <summary>
+            A class used for capturing shape information from command line.
+            <see cref="F:Microsoft.ML.Transforms.Onnx.OnnxTransformer.CustomShapeInfo.Name"/> is a tensor name while <see cref="F:Microsoft.ML.Transforms.Onnx.OnnxTransformer.CustomShapeInfo.Shape"/> is that tenor's desired shape.
+            <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxTransformer.CustomShapeInfo"/> is useful because sometime we want to overwrite unknown
+            shapes loaded from ONNX model.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Transforms.Onnx.OnnxTransformer._options">
+            <summary>
+            Options used to construct this class.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Model">
+            <summary>
+            This field is internal because the associated estimator may access it.
+            </summary>
+        </member>
+        <member name="P:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Inputs">
+            <summary>
+            Input column names from ML.NET's perspective. It can be ordered differently than ONNX model's input list.
+            It's also possible that the <see cref="P:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Inputs"/> contains less variables than ONNX model's input list.
+            For each name in <see cref="P:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Inputs"/>, an input tensor with the same name can be found in the underlying ONNX model.
+            </summary>
+        </member>
+        <member name="P:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Outputs">
+            <summary>
+            Output column names from ML.NET's perspective. It can be ordered differently than ONNX model's output list.
+            It's also possible that the <see cref="P:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Outputs"/> contains less variables than ONNX model's output list.
+            For each name in <see cref="P:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Outputs"/>, an output tensor with the same name can be found in the underlying ONNX model.
+            </summary>
+        </member>
+        <member name="P:Microsoft.ML.Transforms.Onnx.OnnxTransformer.OutputTypes">
+            <summary>
+            Types of <see cref="P:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Outputs"/>. The i-th element is the type of the i-th output in <see cref="P:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Outputs"/>.
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxTransformer.#ctor(Microsoft.ML.Runtime.IHostEnvironment,System.String,System.Nullable{System.Int32},System.Boolean,System.Collections.Generic.IDictionary{System.String,System.Int32[]},System.Int32)">
+            <summary>
+            Transform for scoring ONNX models. Input data column names/types must exactly match
+            all model input names. All possible output columns are generated, with names/types
+            specified by the model.
+            </summary>
+            <param name="env">The environment to use.</param>
+            <param name="modelFile">Model file path.</param>
+            <param name="gpuDeviceId">Optional GPU device ID to run execution on. Null for CPU.</param>
+            <param name="fallbackToCpu">If GPU error, raise exception or fallback to CPU.</param>
+            <param name="shapeDictionary"></param>
+            <param name="recursionLimit">Optional, specifies the Protobuf CodedInputStream recursion limit. Default value is 100.</param>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxTransformer.#ctor(Microsoft.ML.Runtime.IHostEnvironment,System.String[],System.String[],System.String,System.Nullable{System.Int32},System.Boolean,System.Collections.Generic.IDictionary{System.String,System.Int32[]},System.Int32,System.Nullable{System.Int32},System.Nullable{System.Int32})">
+            <summary>
+            Transform for scoring ONNX models. Input data column names/types must exactly match
+            all model input names. Only the output columns specified will be generated.
+            </summary>
+            <param name="env">The environment to use.</param>
+            <param name="outputColumnNames">The output columns to generate. Names must match model specifications. Data types are inferred from model.</param>
+            <param name="inputColumnNames">The name of the input data columns. Must match model's input names.</param>
+            <param name="modelFile">Model file path.</param>
+            <param name="gpuDeviceId">Optional GPU device ID to run execution on. Null for CPU.</param>
+            <param name="fallbackToCpu">If GPU error, raise exception or fallback to CPU.</param>
+            <param name="shapeDictionary"></param>
+            <param name="recursionLimit">Optional, specifies the Protobuf CodedInputStream recursion limit. Default value is 100.</param>
+            <param name="interOpNumThreads">Controls the number of threads used to parallelize the execution of the graph (across nodes).</param>
+            <param name="intraOpNumThreads">Controls the number of threads to use to run the model.</param>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxTransformer.AdjustDimensions(System.Collections.Generic.List{System.Int32})">
+            <summary>
+            This design assumes that all unknown dimensions are 1s. It also convert scalar shape [] in ONNX to [1].
+            [TODO] We should infer the unknown shape from input data instead of forcing them to be 1.
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxTransformer.MapDataViewColumnToOnnxOutputTensor(System.Int32)">
+            <summary>
+            In the case that the ML.Net user wants a subset of columns or lists the columns in a different order then specified in the ONNX model,
+            we need to map from the ML.Net dataview column index to the ONNX model output index. This method does that mapping.
+            </summary>
+            <param name="iinfo">The index of the ML.Net column requested.</param>
+            <returns>The index of ONNX output.</returns>
+        </member>
+        <member name="F:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Mapper._inputColIndices">
+            <summary>
+            <see cref="F:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Mapper._inputColIndices"/>'s i-th element value tells the <see cref="T:Microsoft.ML.IDataView"/> column index to
+            find the i-th ONNX input.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Mapper._inputTensorShapes">
+            <summary>
+            <see cref="F:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Mapper._inputTensorShapes"/>'s i-th element value tells if the i-th ONNX input's shape if it's a tensor.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Mapper._inputOnnxTypes">
+            <summary>
+            <see cref="F:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Mapper._inputOnnxTypes"/>'s i-th element value tells if the <see cref="T:System.Type"/> of the i-th ONNX input.
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Mapper.GetNamedOnnxValueGetters(Microsoft.ML.DataViewRow,System.Int32[],System.Type[],System.Collections.Generic.List{System.Int32}[])">
+            <summary>
+            Helper function to wrap ML.NET getters to produce ONNXRuntime variables.
+            For each required input of the ONNX model, there will be a <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Mapper.INamedOnnxValueGetter"/>,
+            which first invokes a ML.NET getter and casts the obtained value to <see cref="T:Microsoft.ML.OnnxRuntime.NamedOnnxValue"/>.
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Mapper.CreateNamedOnnxValueGetter(Microsoft.ML.DataViewRow,System.Type,System.Int32,System.Collections.Generic.List{System.Int32})">
+            <summary>
+            Wrap ML.NET getter to produce NamedOnnxValue. The wrapper is used to fetch non-vector ML.NET column and cast ML.NET column to
+            NamedOnnxValue which is consumable by ONNXRuntime.
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Mapper.CreateNamedOnnxValueGetterCore``1(Microsoft.ML.DataViewRow,System.Int32,System.Collections.Generic.List{System.Int32})">
+            <summary>
+            Function needed by reflection in <see cref="M:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Mapper.CreateNamedOnnxValueGetter(Microsoft.ML.DataViewRow,System.Type,System.Int32,System.Collections.Generic.List{System.Int32})"/>.
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Mapper.CreateNamedOnnxValueGetterVec(Microsoft.ML.DataViewRow,System.Type,System.Int32,System.Collections.Generic.List{System.Int32})">
+            <summary>
+            Wrap ML.NET getter to produce NamedOnnxValue. The wrapper is used to fetch vector-typed ML.NET column and cast ML.NET column to
+            NamedOnnxValue which is consumable by ONNXRuntime.
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Mapper.CreateNamedOnnxValueGetterVecCore``1(Microsoft.ML.DataViewRow,System.Int32,System.Collections.Generic.List{System.Int32})">
+            <summary>
+            Function needed by reflection in <see cref="M:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Mapper.CreateNamedOnnxValueGetterVec(Microsoft.ML.DataViewRow,System.Type,System.Int32,System.Collections.Generic.List{System.Int32})"/>.
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Transforms.Onnx.OnnxTransformer.Mapper.INamedOnnxValueGetter">
+            <summary>
+            Common function for wrapping ML.NET getter as a NamedOnnxValue getter.
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator">
+             <summary>
+             <see cref="T:Microsoft.ML.IEstimator`1"/> for scoring ONNX models in the ML.NET framework.
+             </summary>
+             <remarks>
+             <format type="text/markdown"><![CDATA[
+            
+             ###  Estimator Characteristics
+             |  |  |
+             | -- | -- |
+             | Does this estimator need to look at the data to train its parameters? | No |
+             | Input column data type | Known-sized vector of <xref:System.Single> or <xref:System.Double> types |
+             | Output column data type | As specified by the ONNX model |
+             | Required NuGet in addition to Microsoft.ML | Microsoft.ML.OnnxTransformer (always),  either Microsoft.ML.OnnxRuntime 1.6.0 (for CPU processing) or Microsoft.ML.OnnxRuntime.Gpu 1.6.0 (for GPU processing if GPU is available) |
+             | Exportable to ONNX | No |
+            
+             To create this estimator use the following APIs:
+             [ApplyOnnxModel](xref:Microsoft.ML.OnnxCatalog.ApplyOnnxModel*)
+            
+             Supports inferencing of models in ONNX 1.6 format (opset 11), using the [Microsoft.ML.OnnxRuntime](https://www.nuget.org/packages/Microsoft.ML.OnnxRuntime/) library.
+             Models are scored on CPU if the project references Microsoft.ML.OnnxRuntime and on the GPU if the project references Microsoft.ML.OnnxRuntime.Gpu.
+             Every project using the OnnxScoringEstimator must reference one of the above two packages.
+            
+             To run on a GPU, use the
+             NuGet package [Microsoft.ML.OnnxRuntime.Gpu](https://www.nuget.org/packages/Microsoft.ML.OnnxRuntime.Gpu/) instead of the Microsoft.ML.OnnxRuntime nuget (which is for CPU processing). Microsoft.ML.OnnxRuntime.Gpu
+             requires a [CUDA supported GPU](https://developer.nvidia.com/cuda-gpus#compute), the [CUDA 10.2 Toolkit](https://developer.nvidia.com/cuda-downloads), and [cuDNN 8.0.3](https://developer.nvidia.com/cudnn) (as indicated on [Onnxruntime's documentation](https://github.com/Microsoft/onnxruntime#system-requirements)).
+             When creating the estimator through [ApplyOnnxModel](xref:Microsoft.ML.OnnxCatalog.ApplyOnnxModel*), set the parameter 'gpuDeviceId' to a valid non-negative integer. Typical device ID values are 0 or 1. If the GPU device isn't found but 'fallbackToCpu = true' then the estimator will run on the CPU. If the GPU device isn't found but 'fallbackToCpu = false' then the estimator will throw an exception
+            
+             The inputs and outputs of the ONNX models must be Tensor type. Sequence and Maps are not yet supported.
+            
+             Internally, OnnxTransformer (the return value of OnnxScoringEstimator.Fit()) holds a reference to an inference session which points to unmanaged memory owned by OnnxRuntime.dll.
+             Whenever there is a call to [ApplyOnnxModel](xref:Microsoft.ML.OnnxCatalog.ApplyOnnxModel*) in a pipeline, it is advised to cast the return value of the Fit() call to IDisposable and call Dispose() to ensure that there are no memory leaks.
+            
+             OnnxRuntime works on Windows, MacOS and Ubuntu 16.04 Linux 64-bit platforms.
+             Visit [ONNX Models](https://github.com/onnx/models) to see a list of readily available models to get started with.
+             Refer to [ONNX](http://onnx.ai) for more information.
+            
+             ]]>
+             </format>
+             </remarks>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator.#ctor(Microsoft.ML.Runtime.IHostEnvironment,System.String,System.Nullable{System.Int32},System.Boolean,System.Collections.Generic.IDictionary{System.String,System.Int32[]},System.Int32)">
+            <summary>
+            Transform for scoring ONNX models. Input data column names/types must exactly match
+            all model input names. All possible output columns are generated, with names/types
+            specified by model.
+            </summary>
+            <param name="env">The environment to use.</param>
+            <param name="modelFile">Model file path.</param>
+            <param name="gpuDeviceId">Optional GPU device ID to run execution on. Null for CPU.</param>
+            <param name="fallbackToCpu">If GPU error, raise exception or fallback to CPU.</param>
+            <param name="shapeDictionary"></param>
+            <param name="recursionLimit">Optional, specifies the Protobuf CodedInputStream recursion limit. Default value is 100.</param>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator.#ctor(Microsoft.ML.Runtime.IHostEnvironment,System.String[],System.String[],System.String,System.Nullable{System.Int32},System.Boolean,System.Collections.Generic.IDictionary{System.String,System.Int32[]},System.Int32,System.Nullable{System.Int32},System.Nullable{System.Int32})">
+            <summary>
+            Transform for scoring ONNX models. Input data column names/types must exactly match
+            all model input names. Only the output columns specified will be generated.
+            </summary>
+            <param name="env">The environment to use.</param>
+            <param name="outputColumnNames">The output columns to generate. Names must match model specifications. Data types are inferred from model.</param>
+            <param name="inputColumnNames">The name of the input data columns. Must match model's input names.</param>
+            <param name="modelFile">Model file path.</param>
+            <param name="gpuDeviceId">Optional GPU device ID to run execution on. Null for CPU.</param>
+            <param name="fallbackToCpu">If GPU error, raise exception or fallback to CPU.</param>
+            <param name="shapeDictionary"></param>
+            <param name="recursionLimit">Optional, specifies the Protobuf CodedInputStream recursion limit. Default value is 100.</param>
+            <param name="interOpNumThreads">Controls the number of threads used to parallelize the execution of the graph (across nodes).</param>
+            <param name="intraOpNumThreads">Controls the number of threads to use to run the model.</param>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator.GetOutputSchema(Microsoft.ML.SchemaShape)">
+            <summary>
+            Returns the <see cref="T:Microsoft.ML.SchemaShape"/> of the schema which will be produced by the transformer.
+            Used for schema propagation and verification in a pipeline.
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxTypeParser.GetNativeScalarType(System.Int32)">
+            <summary>
+            Derive the corresponding <see cref="T:System.Type"/> for ONNX tensor's element type specified by <paramref name="elementType"/>.
+            The corresponding <see cref="T:System.Type"/> should match the type system in ONNXRuntime's C# APIs.
+            This function is used when determining the corresponding <see cref="T:System.Type"/> of <see cref="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto"/>.
+            </summary>
+            <param name="elementType">ONNX's tensor element type.</param>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxTypeParser.GetNativeType(Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto)">
+            <summary>
+            Derive the corresponding <see cref="T:System.Type"/> for ONNX variable typed to <paramref name="typeProto"/>.
+            The corresponding <see cref="T:System.Type"/> should match the type system in ONNXRuntime's C# APIs.
+            </summary>
+            <param name="typeProto">ONNX variable's type.</param>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxTypeParser.GetScalarDataViewType(System.Int32)">
+            <summary>
+            Derive the corresponding <see cref="T:Microsoft.ML.Data.DataViewType"/> for ONNX tensor's element type specified by <paramref name="elementType"/>.
+            </summary>
+            <param name="elementType">ONNX's tensor element type.</param>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxTypeParser.GetDimValue(Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorShapeProto.Types.Dimension)">
+            <summary>
+            Parse the dimension information of a single tensor axis. Note that 2-D ONNX tensors have two axes.
+            </summary>
+            <param name="dim">ONNX's tensor dimension.</param>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxTypeParser.GetTensorDims(Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorShapeProto)">
+            <summary>
+            Parse the shape information of a tensor.
+            </summary>
+            <param name="tensorShapeProto">ONNX's tensor shape.</param>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxTypeParser.GetDataViewType(Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto)">
+            <summary>
+            Derive the corresponding <see cref="T:Microsoft.ML.Data.DataViewType"/> for ONNX variable typed to <paramref name="typeProto"/>.
+            The returned <see cref="P:Microsoft.ML.Data.DataViewType.RawType"/> should match the type system in ONNXRuntime's C# APIs.
+            </summary>
+            <param name="typeProto">ONNX variable's type.</param>
+        </member>
+        <member name="T:Microsoft.ML.Transforms.Onnx.OnnxTypeParser.CastHelper">
+            <summary>
+            Class which store casting functions used in <see cref="M:Microsoft.ML.Transforms.Onnx.OnnxTypeParser.GetDataViewValueCasterAndResultedType(Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto,System.Type@)"/>.
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxTypeParser.GetDataViewValueCasterAndResultedType(Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto,System.Type@)">
+            <summary>
+            Create a <see cref="T:System.Func`2"/> to map a <see cref="T:Microsoft.ML.OnnxRuntime.NamedOnnxValue"/> to the associated .NET <see langword="object"/>.
+            The resulted .NET object's actual type is <paramref name="resultedType"/>.
+            The returned <see cref="P:Microsoft.ML.Data.DataViewType.RawType"/> should match the type system in ONNXRuntime's C# APIs.
+            </summary>
+            <param name="typeProto">ONNX variable's type.</param>
+            <param name="resultedType">C# type of <paramref name="typeProto"/>.</param>
+        </member>
+        <member name="T:Microsoft.ML.Transforms.Onnx.OnnxModel">
+            <summary>
+            OnnxModel is a utility class to load ONNX models and retrieve metadata
+            for inputs and outputs. The metadata includes the names, shapes and types
+            It provides API to open a session, score tensors (NamedOnnxValues) and return
+            the results.
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Transforms.Onnx.OnnxModel.OnnxModelInfo">
+            <summary>
+            OnnxModelInfo contains the data that we should get from
+            OnnxRuntime API once that functionality is added.
+            </summary>
+        </member>
+        <member name="P:Microsoft.ML.Transforms.Onnx.OnnxModel.OnnxModelInfo.InputNames">
+            <summary>
+            InputNames[i] is the name of the i-th element in <see cref="P:Microsoft.ML.Transforms.Onnx.OnnxModel.OnnxModelInfo.InputsInfo"/>.
+            </summary>
+        </member>
+        <member name="P:Microsoft.ML.Transforms.Onnx.OnnxModel.OnnxModelInfo.OutputNames">
+            <summary>
+            OutputNames[i] is the name of the i-th element in <see cref="P:Microsoft.ML.Transforms.Onnx.OnnxModel.OnnxModelInfo.OutputsInfo"/>.
+            </summary>
+        </member>
+        <member name="P:Microsoft.ML.Transforms.Onnx.OnnxModel.OnnxModelInfo.InitializerNames">
+            <summary>
+            Initializers[i] is the name of the i-th initializer in <see cref="P:Microsoft.ML.Transforms.Onnx.OnnxModel.OnnxModelInfo.InitializersInfo"/>.
+            </summary>
+        </member>
+        <member name="P:Microsoft.ML.Transforms.Onnx.OnnxModel.OnnxModelInfo.InputsInfo">
+            <summary>
+            Inputs of the containing <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxModel"/>.
+            </summary>
+        </member>
+        <member name="P:Microsoft.ML.Transforms.Onnx.OnnxModel.OnnxModelInfo.OutputsInfo">
+            <summary>
+            Outputs of the containing <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxModel"/>.
+            </summary>
+        </member>
+        <member name="P:Microsoft.ML.Transforms.Onnx.OnnxModel.OnnxModelInfo.InitializersInfo">
+            <summary>
+            Initializers of the containing <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxModel"/>
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxModel.OnnxModelInfo.GetInput(System.String)">
+            <summary>
+            Return the ONNX value for a <see cref="T:Microsoft.ML.IDataView"/> input column called <paramref name="name"/>.
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxModel.OnnxModelInfo.GetOutput(System.String)">
+            <summary>
+            Return the ONNX value for a <see cref="T:Microsoft.ML.IDataView"/> output column called <paramref name="name"/>.
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Transforms.Onnx.OnnxModel.OnnxVariableInfo">
+            <summary>
+            OnnxNodeInfo contains all the information for a given node (e.g. inputs/outputs)
+            of an Onnx model.
+            </summary>
+        </member>
+        <member name="P:Microsoft.ML.Transforms.Onnx.OnnxModel.OnnxVariableInfo.Name">
+            <summary>
+            The Name of the variable. Note that ONNX variable are named.
+            </summary>
+        </member>
+        <member name="P:Microsoft.ML.Transforms.Onnx.OnnxModel.OnnxVariableInfo.Shape">
+            <summary>
+            The shape of the variable if the variable is a tensor. For other
+            types such sequence and dictionary, <see cref="P:Microsoft.ML.Transforms.Onnx.OnnxModel.OnnxVariableInfo.Shape"/> would be
+            <see langword="null"/>.
+            </summary>
+        </member>
+        <member name="P:Microsoft.ML.Transforms.Onnx.OnnxModel.OnnxVariableInfo.TypeInOnnxRuntime">
+            <summary>
+            The type of the variable produced by ONNXRuntime.
+            </summary>
+        </member>
+        <member name="P:Microsoft.ML.Transforms.Onnx.OnnxModel.OnnxVariableInfo.DataViewType">
+            <summary>
+            The <see cref="T:Microsoft.ML.Data.DataViewType"/> that this ONNX variable corresponds
+            to in <see cref="T:Microsoft.ML.IDataView"/>'s type system.
+            </summary>
+        </member>
+        <member name="P:Microsoft.ML.Transforms.Onnx.OnnxModel.OnnxVariableInfo.Caster">
+            <summary>
+            A method to case <see cref="T:Microsoft.ML.OnnxRuntime.NamedOnnxValue"/> produced by
+            ONNXRuntime to the type specified in <see cref="P:Microsoft.ML.Transforms.Onnx.OnnxModel.OnnxVariableInfo.DataViewType"/>.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Transforms.Onnx.OnnxModel._session">
+            <summary>
+            The ONNXRuntime facility to execute the loaded ONNX model.
+            </summary>
+        </member>
+        <member name="P:Microsoft.ML.Transforms.Onnx.OnnxModel.ModelStream">
+            <summary>
+            The FileStream holding onto the loaded ONNX model.
+            </summary>
+        </member>
+        <member name="P:Microsoft.ML.Transforms.Onnx.OnnxModel.ModelInfo">
+            <summary>
+            The ONNX model's information from ONNXRuntime's perspective. ML.NET can change the input and output of that model in some ways.
+            For example, ML.NET can shuffle the inputs so that the i-th ONNX input becomes the j-th input column of <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxTransformer"/>.
+            ML.NET can also only exposes a subset of ONNX outputs in <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxTransformer"/>.
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxModel.#ctor(System.String,System.Nullable{System.Int32},System.Boolean,System.Boolean,System.Collections.Generic.IDictionary{System.String,System.Int32[]},System.Int32,System.Nullable{System.Int32},System.Nullable{System.Int32})">
+            <summary>
+            Constructs OnnxModel object from file.
+            </summary>
+            <param name="modelFile">Model file path.</param>
+            <param name="gpuDeviceId">GPU device ID to execute on. Null for CPU.</param>
+            <param name="fallbackToCpu">If true, resumes CPU execution quietly upon GPU error.</param>
+            <param name="ownModelFile">If true, the <paramref name="modelFile"/> will be deleted when <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxModel"/> is
+            no longer needed.</param>
+            <param name="shapeDictionary"></param>
+            <param name="recursionLimit">Optional, specifies the Protobuf CodedInputStream recursion limit. Default value is 100.</param>
+            <param name="interOpNumThreads">Controls the number of threads used to parallelize the execution of the graph (across nodes).</param>
+            <param name="intraOpNumThreads">Controls the number of threads to use to run the model.</param>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxModel.CheckOnnxShapeCompatibility(System.Collections.Generic.IEnumerable{System.Int32},System.Collections.Generic.IEnumerable{System.Int32})">
+             <summary>
+             This function returns <see langword="true"/> if <paramref name="left"/> and <paramref name="right"/> are
+             compatible. Otherwise, <see langword="false"/> is returned.
+            
+             Patterns leads to <see langword="true"/>.
+             Left:        Right:
+               [-1, 3]      [2, 3]
+               [2, 3]       [-1, 3]
+               [-1, 3, -3]  [-2, 3, -1]
+            
+             </summary>
+             <param name="left">An ONNX shape.</param>
+             <param name="right">An ONNX shape.</param>
+             <returns><see langword="true"/> if <paramref name="left"/> and <paramref name="right"/> are compatible and
+             <see langword="false"/> otherwise.</returns>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxModel.CreateFromBytes(System.Byte[],Microsoft.ML.Runtime.IHostEnvironment)">
+            <summary>
+            Create an OnnxModel from a byte[]. Usually, a ONNX model is consumed by <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxModel"/> as a file.
+            With <see cref="M:Microsoft.ML.Transforms.Onnx.OnnxModel.CreateFromBytes(System.Byte[],Microsoft.ML.Runtime.IHostEnvironment)"/> and <see cref="M:Microsoft.ML.Transforms.Onnx.OnnxModel.CreateFromBytes(System.Byte[],Microsoft.ML.Runtime.IHostEnvironment,System.Nullable{System.Int32},System.Boolean,System.Collections.Generic.IDictionary{System.String,System.Int32[]},System.Int32)"/>,
+            it's possible to use in-memory model (type: byte[]) to create <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxModel"/>.
+            </summary>
+            <param name="modelBytes">Bytes of the serialized model</param>
+            <param name="env">IHostEnvironment</param>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxModel.CreateFromBytes(System.Byte[],Microsoft.ML.Runtime.IHostEnvironment,System.Nullable{System.Int32},System.Boolean,System.Collections.Generic.IDictionary{System.String,System.Int32[]},System.Int32)">
+            <summary>
+            Create an OnnxModel from a byte[]. Set execution to GPU if required.
+            Usually, a ONNX model is consumed by <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxModel"/> as a file.
+            With <see cref="M:Microsoft.ML.Transforms.Onnx.OnnxModel.CreateFromBytes(System.Byte[],Microsoft.ML.Runtime.IHostEnvironment)"/> and
+            <see cref="M:Microsoft.ML.Transforms.Onnx.OnnxModel.CreateFromBytes(System.Byte[],Microsoft.ML.Runtime.IHostEnvironment,System.Nullable{System.Int32},System.Boolean,System.Collections.Generic.IDictionary{System.String,System.Int32[]},System.Int32)"/>,
+            it's possible to use in-memory model (type: byte[]) to create <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxModel"/>.
+            </summary>
+            <param name="modelBytes">Bytes of the serialized model.</param>
+            <param name="env">IHostEnvironment</param>
+            <param name="gpuDeviceId">GPU device ID to execute on. Null for CPU.</param>
+            <param name="fallbackToCpu">If true, resumes CPU execution quietly upon GPU error.</param>
+            <param name="shapeDictionary">User-provided shapes. If the key "myTensorName" is associated
+            with the value [1, 3, 5], the shape of "myTensorName" will be set to [1, 3, 5].
+            The shape loaded from <paramref name="modelBytes"/> would be overwritten.</param>
+            <param name="recursionLimit">Optional, specifies the Protobuf CodedInputStream recursion limit. Default value is 100.</param>
+            <returns>An <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxModel"/></returns>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxModel.Run(System.Collections.Generic.List{Microsoft.ML.OnnxRuntime.NamedOnnxValue},System.Collections.Generic.List{System.String})">
+            <summary>
+            Uses an open session to score a list of NamedOnnxValues.
+            </summary>
+            <param name="inputNamedOnnxValues">The NamedOnnxValues to score.</param>
+            <param name="outputColumns">The active output columns.</param>
+            <returns>Resulting output NamedOnnxValues list.</returns>
+        </member>
+        <member name="F:Microsoft.ML.Transforms.Onnx.OnnxModel._disposed">
+            <summary>
+            Flag used to indicate if the unmanaged resources (aka the model file handle <see cref="P:Microsoft.ML.Transforms.Onnx.OnnxModel.ModelStream"/>
+            and <see cref="F:Microsoft.ML.Transforms.Onnx.OnnxModel._session"/>) have been deleted.
+            </summary>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxModel.Dispose(System.Boolean)">
+            <summary>
+            There are two unmanaged resources we can dispose, <see cref="F:Microsoft.ML.Transforms.Onnx.OnnxModel._session"/> and <see cref="P:Microsoft.ML.Transforms.Onnx.OnnxModel.ModelStream"/>
+            </summary>
+            <param name="disposing"></param>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxUtils.CreateScalarNamedOnnxValue``1(System.String,``0)">
+            <summary>
+            Creates a NamedOnnxValue from a scalar value.
+            </summary>
+            <typeparam name="T">The type of the Tensor contained in the NamedOnnxValue.</typeparam>
+            <param name="name">The name of the NamedOnnxValue.</param>
+            <param name="data">The data values of the Tensor.</param>
+            <returns>NamedOnnxValue</returns>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxUtils.CreateNamedOnnxValue``1(System.String,System.ReadOnlySpan{``0},System.Collections.Generic.List{System.Int32})">
+            <summary>
+            Create a NamedOnnxValue from vbuffer span. Checks if the tensor type
+            is supported by OnnxRuntime prior to execution.
+            </summary>
+            <typeparam name="T">The type of the Tensor contained in the NamedOnnxValue.</typeparam>
+            <param name="name">The name of the NamedOnnxValue.</param>
+            <param name="data">A span containing the data</param>
+            <param name="shape">The shape of the Tensor being created.</param>
+            <returns>NamedOnnxValue</returns>
+        </member>
+        <member name="M:Microsoft.ML.Transforms.Onnx.OnnxUtils.OnnxToMlNetType(System.Type)">
+            <summary>
+            Converts a Onnx type, that follows the System.Type convention
+            to the type system ML.NET recognizes (e.g. I4, I8, R4 etc.)
+            </summary>
+            <param name="type"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Microsoft.ML.OnnxCatalog.ApplyOnnxModel(Microsoft.ML.TransformsCatalog,System.String,System.Nullable{System.Int32},System.Boolean)">
+            <summary>
+            Create a <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator"/>, which applies a pre-trained Onnx model to the input column.
+            Input/output columns are determined based on the input/output columns of the provided ONNX model.
+            Please refer to <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator"/> to learn more about the necessary dependencies,
+            and how to run it on a GPU.
+            </summary>
+            <remarks>
+            The name/type of input columns must exactly match name/type of the ONNX model inputs.
+            The name/type of the produced output columns will match name/type of the ONNX model outputs.
+            If the gpuDeviceId value is <see langword="null" /> the <see cref="P:MLContext.GpuDeviceId"/> value will be used if it is not <see langword="null" />.
+            </remarks>
+            <param name="catalog">The transform's catalog.</param>
+            <param name="modelFile">The path of the file containing the ONNX model.</param>
+            <param name="gpuDeviceId">Optional GPU device ID to run execution on, <see langword="null" /> to run on CPU.</param>
+            <param name="fallbackToCpu">If GPU error, raise exception or fallback to CPU.</param>
+            <example>
+            <format type="text/markdown">
+            <![CDATA[
+            [!code-csharp[ApplyOnnxModel](~/../docs/samples/docs/samples/Microsoft.ML.Samples/Dynamic/Transforms/ApplyOnnxModel.cs)]
+            ]]>
+            </format>
+            </example>
+        </member>
+        <member name="M:Microsoft.ML.OnnxCatalog.ApplyOnnxModel(Microsoft.ML.TransformsCatalog,System.String,System.Collections.Generic.IDictionary{System.String,System.Int32[]},System.Nullable{System.Int32},System.Boolean)">
+            <summary>
+            Create a <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator"/>, which applies a pre-trained Onnx model to the input column.
+            Input/output columns are determined based on the input/output columns of the provided ONNX model.
+            Please refer to <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator"/> to learn more about the necessary dependencies,
+            and how to run it on a GPU.
+            </summary>
+            <remarks>
+            The name/type of input columns must exactly match name/type of the ONNX model inputs.
+            The name/type of the produced output columns will match name/type of the ONNX model outputs.
+            If the gpuDeviceId value is <see langword="null" /> the <see cref="P:MLContext.GpuDeviceId"/> value will be used if it is not <see langword="null" />.
+            </remarks>
+            <param name="catalog">The transform's catalog.</param>
+            <param name="modelFile">The path of the file containing the ONNX model.</param>
+            <param name="shapeDictionary">ONNX shapes to be used over those loaded from <paramref name="modelFile"/>.
+            For keys use names as stated in the ONNX model, e.g. "input". Stating the shapes with this parameter
+            is particularly useful for working with variable dimension inputs and outputs.
+            </param>
+            <param name="gpuDeviceId">Optional GPU device ID to run execution on, <see langword="null" /> to run on CPU.</param>
+            <param name="fallbackToCpu">If GPU error, raise exception or fallback to CPU.</param>
+            <example>
+            <format type="text/markdown">
+            <![CDATA[
+            [!code-csharp[ApplyOnnxModel](~/../docs/samples/docs/samples/Microsoft.ML.Samples/Dynamic/Transforms/ApplyOnnxModel.cs)]
+            ]]>
+            </format>
+            </example>
+        </member>
+        <member name="M:Microsoft.ML.OnnxCatalog.ApplyOnnxModel(Microsoft.ML.TransformsCatalog,System.String,System.String,System.String,System.Nullable{System.Int32},System.Boolean)">
+            <summary>
+            Create a <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator"/>, which applies a pre-trained Onnx model to the <paramref name="inputColumnName"/> column.
+            Please refer to <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator"/> to learn more about the necessary dependencies,
+            and how to run it on a GPU.
+            </summary>
+            <param name="catalog">The transform's catalog.</param>
+            <param name="outputColumnName">The output column resulting from the transformation.</param>
+            <param name="inputColumnName">The input column.</param>
+            <param name="modelFile">The path of the file containing the ONNX model.</param>
+            <param name="gpuDeviceId">Optional GPU device ID to run execution on, <see langword="null" /> to run on CPU.</param>
+            <param name="fallbackToCpu">If GPU error, raise exception or fallback to CPU.</param>
+            <remarks>
+            If the gpuDeviceId value is <see langword="null" /> the <see cref="P:MLContext.GpuDeviceId"/> value will be used if it is not <see langword="null" />.
+            </remarks>
+            <example>
+            <format type="text/markdown">
+            <![CDATA[
+            [!code-csharp[ApplyOnnxModel](~/../docs/samples/docs/samples/Microsoft.ML.Samples/Dynamic/Transforms/ApplyONNXModelWithInMemoryImages.cs)]
+            ]]>
+            </format>
+            </example>
+        </member>
+        <member name="M:Microsoft.ML.OnnxCatalog.ApplyOnnxModel(Microsoft.ML.TransformsCatalog,Microsoft.ML.Transforms.Onnx.OnnxOptions)">
+            <summary>
+            Create a <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator"/> using the specified <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxOptions"/>.
+            Please refer to <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator"/> to learn more about the necessary dependencies,
+            and how to run it on a GPU.
+            </summary>
+            <remarks>
+            If the options.GpuDeviceId value is <see langword="null" /> the <see cref="P:MLContext.GpuDeviceId"/> value will be used if it is not <see langword="null" />.
+            </remarks>
+            <param name="catalog">The transform's catalog.</param>
+            <param name="options">Options for the <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator"/>.</param>
+        </member>
+        <member name="M:Microsoft.ML.OnnxCatalog.ApplyOnnxModel(Microsoft.ML.TransformsCatalog,System.String,System.String,System.String,System.Collections.Generic.IDictionary{System.String,System.Int32[]},System.Nullable{System.Int32},System.Boolean)">
+            <summary>
+            Create a <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator"/>, which applies a pre-trained Onnx model to the <paramref name="inputColumnName"/> column.
+            Please refer to <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator"/> to learn more about the necessary dependencies,
+            and how to run it on a GPU.
+            </summary>
+            <param name="catalog">The transform's catalog.</param>
+            <param name="outputColumnName">The output column resulting from the transformation.</param>
+            <param name="inputColumnName">The input column.</param>
+            <param name="modelFile">The path of the file containing the ONNX model.</param>
+            <param name="shapeDictionary">ONNX shapes to be used over those loaded from <paramref name="modelFile"/>.
+            For keys use names as stated in the ONNX model, e.g. "input". Stating the shapes with this parameter
+            is particularly useful for working with variable dimension inputs and outputs.
+            </param>
+            <param name="gpuDeviceId">Optional GPU device ID to run execution on, <see langword="null" /> to run on CPU.</param>
+            <param name="fallbackToCpu">If GPU error, raise exception or fallback to CPU.</param>
+            <remarks>
+            If the gpuDeviceId value is <see langword="null" /> the <see cref="P:MLContext.GpuDeviceId"/> value will be used if it is not <see langword="null" />.
+            </remarks>
+            <example>
+            <format type="text/markdown">
+            <![CDATA[
+            [!code-csharp[ApplyOnnxModel](~/../docs/samples/docs/samples/Microsoft.ML.Samples/Dynamic/Transforms/ApplyONNXModelWithInMemoryImages.cs)]
+            ]]>
+            </format>
+            </example>
+        </member>
+        <member name="M:Microsoft.ML.OnnxCatalog.ApplyOnnxModel(Microsoft.ML.TransformsCatalog,System.String[],System.String[],System.String,System.Nullable{System.Int32},System.Boolean)">
+            <summary>
+            Create a <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator"/>, which applies a pre-trained Onnx model to the <paramref name="inputColumnNames"/> columns.
+            Please refer to <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator"/> to learn more about the necessary dependencies,
+            and how to run it on a GPU.
+            </summary>
+            <param name="catalog">The transform's catalog.</param>
+            <param name="outputColumnNames">The output columns resulting from the transformation.</param>
+            <param name="inputColumnNames">The input columns.</param>
+            <param name="modelFile">The path of the file containing the ONNX model.</param>
+            <param name="gpuDeviceId">Optional GPU device ID to run execution on, <see langword="null" /> to run on CPU.</param>
+            <param name="fallbackToCpu">If GPU error, raise exception or fallback to CPU.</param>
+            <remarks>
+            If the gpuDeviceId value is <see langword="null" /> the <see cref="P:MLContext.GpuDeviceId"/> value will be used if it is not <see langword="null" />.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.ML.OnnxCatalog.ApplyOnnxModel(Microsoft.ML.TransformsCatalog,System.String[],System.String[],System.String,System.Collections.Generic.IDictionary{System.String,System.Int32[]},System.Nullable{System.Int32},System.Boolean)">
+            <summary>
+            Create a <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator"/>, which applies a pre-trained Onnx model to the <paramref name="inputColumnNames"/> columns.
+            Please refer to <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator"/> to learn more about the necessary dependencies,
+            and how to run it on a GPU.
+            </summary>
+            <param name="catalog">The transform's catalog.</param>
+            <param name="outputColumnNames">The output columns resulting from the transformation.</param>
+            <param name="inputColumnNames">The input columns.</param>
+            <param name="modelFile">The path of the file containing the ONNX model.</param>
+            <param name="shapeDictionary">ONNX shapes to be used over those loaded from <paramref name="modelFile"/>.
+            For keys use names as stated in the ONNX model, e.g. "input". Stating the shapes with this parameter
+            is particularly useful for working with variable dimension inputs and outputs.
+            </param>
+            <param name="gpuDeviceId">Optional GPU device ID to run execution on, <see langword="null" /> to run on CPU.</param>
+            <param name="fallbackToCpu">If GPU error, raise exception or fallback to CPU.</param>
+            <remarks>
+            If the gpuDeviceId value is <see langword="null" /> the <see cref="P:MLContext.GpuDeviceId"/> value will be used if it is not <see langword="null" />.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.ML.OnnxCatalog.ApplyOnnxModel(Microsoft.ML.TransformsCatalog,System.String[],System.String[],System.String,System.Collections.Generic.IDictionary{System.String,System.Int32[]},System.Nullable{System.Int32},System.Boolean,System.Int32)">
+            <summary>
+            Create a <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator"/>, which applies a pre-trained Onnx model to the <paramref name="inputColumnNames"/> columns.
+            Please refer to <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator"/> to learn more about the necessary dependencies,
+            and how to run it on a GPU.
+            </summary>
+            <param name="catalog">The transform's catalog.</param>
+            <param name="outputColumnNames">The output columns resulting from the transformation.</param>
+            <param name="inputColumnNames">The input columns.</param>
+            <param name="modelFile">The path of the file containing the ONNX model.</param>
+            <param name="shapeDictionary">ONNX shapes to be used over those loaded from <paramref name="modelFile"/>.
+            For keys use names as stated in the ONNX model, e.g. "input". Stating the shapes with this parameter
+            is particularly useful for working with variable dimension inputs and outputs.
+            </param>
+            <param name="gpuDeviceId">Optional GPU device ID to run execution on, <see langword="null" /> to run on CPU.</param>
+            <param name="fallbackToCpu">If GPU error, raise exception or fallback to CPU.</param>
+            <param name="recursionLimit">Optional, specifies the Protobuf CodedInputStream recursion limit. Default value is 100.</param>
+            <remarks>
+            If the gpuDeviceId value is <see langword="null" /> the <see cref="P:MLContext.GpuDeviceId"/> value will be used if it is not <see langword="null" />.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.ML.OnnxCatalog.DnnFeaturizeImage(Microsoft.ML.TransformsCatalog,System.String,System.Func{Microsoft.ML.Transforms.Onnx.DnnImageFeaturizerInput,Microsoft.ML.Data.EstimatorChain{Microsoft.ML.Transforms.ColumnCopyingTransformer}},System.String)">
+            <summary>
+            Create <see cref="T:Microsoft.ML.Transforms.Onnx.DnnImageFeaturizerEstimator"/>, which applies one of the pre-trained DNN models in
+            <see cref="T:Microsoft.ML.Transforms.Onnx.DnnImageModelSelector"/> to featurize an image.
+            </summary>
+            <param name="catalog">The transform's catalog.</param>
+            <param name="outputColumnName">The name of the column resulting from the transformation of <paramref name="inputColumnName"/>.</param>
+            <param name="modelFactory">An extension method on the <see cref="T:Microsoft.ML.Transforms.Onnx.DnnImageModelSelector"/> that creates a chain of two
+            <see cref="T:Microsoft.ML.Transforms.Onnx.OnnxScoringEstimator"/> (one for preprocessing and one with a pretrained image DNN) with specific models
+            included in a package together with that extension method.</param>
+            <param name="inputColumnName">Name of column to transform.
+            If set to <see langword="null"/>, the value of the <paramref name="outputColumnName"/> will be used as source.</param>
+            <example>
+            <format type="text/markdown">
+            <![CDATA[
+            [!code-csharp[DnnFeaturizeImage](~/../docs/samples/docs/samples/Microsoft.ML.Samples/Dynamic/Transforms/ImageAnalytics/DnnFeaturizeImage.cs)]
+            ]]>
+            </format>
+            </example>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.OnnxMlReflection">
+            <summary>Holder for reflection information generated from onnx-ml.proto3</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.OnnxMlReflection.Descriptor">
+            <summary>File descriptor for onnx-ml.proto3</summary>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.Version">
+             <summary>
+             Versioning
+            
+             ONNX versioning is specified in docs/IR.md and elaborated on in docs/Versioning.md
+            
+             To be compatible with both proto2 and proto3, we will use a version number
+             that is not defined by the default value but an explicit enum number.
+             </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.Version.StartVersion">
+            <summary>
+            proto3 requires the first enum value to be zero.
+            We add this just to appease the compiler.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.Version.IrVersion20171010">
+            <summary>
+            The version field is always serialized and we will use it to store the
+            version that the  graph is generated from. This helps us set up version
+            control. 
+            For the IR, we are using simple numbers starting with with 0x00000001, 
+            which was the version we published on Oct 10, 2017.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.Version.IrVersion20171030">
+            <summary>
+            IR_VERSION 2 published on Oct 30, 2017
+            - Added type discriminator to AttributeProto to support proto3 users
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.Version.IrVersion2017113">
+            <summary>
+            IR VERSION 3 published on Nov 3, 2017
+            - For operator versioning:
+               - Added new message OperatorSetIdProto
+               - Added opset_import in ModelProto
+            - For vendor extensions, added domain in NodeProto
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.Version.IrVersion2019122">
+            <summary>
+            IR VERSION 4 published on Jan 22, 2019
+            - Relax constraint that initializers should be a subset of graph inputs
+            - Add type BFLOAT16
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.Version.IrVersion2019318">
+            <summary>
+            IR VERSION 5 published on March 18, 2019
+            - Add message TensorAnnotation.
+            - Add quantization annotation in GraphProto to map tensor with its scale and zero point quantization parameters.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.Version.IrVersion">
+            <summary>
+            IR VERSION 6 published on Sep 19, 2019
+            - Add support for sparse tensor constants stored in model.
+              - Add message SparseTensorProto
+              - Add sparse initializers
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto">
+             <summary>
+             Attributes
+            
+             A named attribute containing either singular float, integer, string, graph,
+             and tensor values, or repeated float, integer, string, graph, and tensor values.
+             An AttributeProto MUST contain the name field, and *only one* of the
+             following content fields, effectively enforcing a C/C++ union equivalent.
+             </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.NameFieldNumber">
+            <summary>Field number for the "name" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.Name">
+            <summary>
+            The name field MUST be present for this version of the IR.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.RefAttrNameFieldNumber">
+            <summary>Field number for the "ref_attr_name" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.RefAttrName">
+            <summary>
+            if ref_attr_name is not empty, ref_attr_name is the attribute name in parent function.
+            In this case, this AttributeProto does not contain data, and it's a reference of attribute
+            in parent scope.
+            NOTE: This should ONLY be used in function (sub-graph). It's invalid to be used in main graph.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.DocStringFieldNumber">
+            <summary>Field number for the "doc_string" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.DocString">
+            <summary>
+            A human-readable documentation for this attribute. Markdown is allowed.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.TypeFieldNumber">
+            <summary>Field number for the "type" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.Type">
+            <summary>
+            The type field MUST be present for this version of the IR.
+            For 0.0.1 versions of the IR, this field was not defined, and
+            implementations needed to use has_field hueristics to determine
+            which value field was in use.  For IR_VERSION 0.0.2 or later, this
+            field MUST be set and match the f|i|s|t|... field in use.  This
+            change was made to accommodate proto3 implementations.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.FFieldNumber">
+            <summary>Field number for the "f" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.F">
+            <summary>
+            Exactly ONE of the following fields must be present for this version of the IR
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.IFieldNumber">
+            <summary>Field number for the "i" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.I">
+            <summary>
+            int
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.SFieldNumber">
+            <summary>Field number for the "s" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.S">
+            <summary>
+            UTF-8 string
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.TFieldNumber">
+            <summary>Field number for the "t" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.T">
+            <summary>
+            tensor value
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.GFieldNumber">
+            <summary>Field number for the "g" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.G">
+            <summary>
+            graph
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.SparseTensorFieldNumber">
+            <summary>Field number for the "sparse_tensor" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.SparseTensor">
+            <summary>
+            sparse tensor value
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.FloatsFieldNumber">
+            <summary>Field number for the "floats" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.Floats">
+            <summary>
+            list of floats
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.IntsFieldNumber">
+            <summary>Field number for the "ints" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.Ints">
+            <summary>
+            list of ints
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.StringsFieldNumber">
+            <summary>Field number for the "strings" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.Strings">
+            <summary>
+            list of UTF-8 strings
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.TensorsFieldNumber">
+            <summary>Field number for the "tensors" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.Tensors">
+            <summary>
+            list of tensors
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.GraphsFieldNumber">
+            <summary>Field number for the "graphs" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.Graphs">
+            <summary>
+            list of graph
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.SparseTensorsFieldNumber">
+            <summary>Field number for the "sparse_tensors" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.SparseTensors">
+            <summary>
+            list of sparse tensors
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.Types">
+            <summary>Container for nested types declared in the AttributeProto message type.</summary>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.AttributeProto.Types.AttributeType">
+            <summary>
+            Note: this enum is structurally identical to the OpSchema::AttrType
+            enum defined in schema.h.  If you rev one, you likely need to rev the other.
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ValueInfoProto">
+            <summary>
+            Defines information on value, including the name, the type, and
+            the shape of the value.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ValueInfoProto.NameFieldNumber">
+            <summary>Field number for the "name" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ValueInfoProto.Name">
+            <summary>
+            This field MUST be present in this version of the IR.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ValueInfoProto.TypeFieldNumber">
+            <summary>Field number for the "type" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ValueInfoProto.Type">
+            <summary>
+            This field MUST be present in this version of the IR for
+            inputs and outputs of the top-level graph.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ValueInfoProto.DocStringFieldNumber">
+            <summary>Field number for the "doc_string" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ValueInfoProto.DocString">
+            <summary>
+            A human-readable documentation for this value. Markdown is allowed.
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.NodeProto">
+             <summary>
+             Nodes
+            
+             Computation graphs are made up of a DAG of nodes, which represent what is
+             commonly called a "layer" or "pipeline stage" in machine learning frameworks.
+            
+             For example, it can be a node of type "Conv" that takes in an image, a filter 
+             tensor and a bias tensor, and produces the convolved output.
+             </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.NodeProto.InputFieldNumber">
+            <summary>Field number for the "input" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.NodeProto.Input">
+            <summary>
+            namespace Value
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.NodeProto.OutputFieldNumber">
+            <summary>Field number for the "output" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.NodeProto.Output">
+            <summary>
+            namespace Value
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.NodeProto.NameFieldNumber">
+            <summary>Field number for the "name" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.NodeProto.Name">
+            <summary>
+            An optional identifier for this node in a graph.
+            This field MAY be absent in ths version of the IR.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.NodeProto.OpTypeFieldNumber">
+            <summary>Field number for the "op_type" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.NodeProto.OpType">
+            <summary>
+            The symbolic identifier of the Operator to execute.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.NodeProto.DomainFieldNumber">
+            <summary>Field number for the "domain" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.NodeProto.Domain">
+            <summary>
+            The domain of the OperatorSet that specifies the operator named by op_type.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.NodeProto.AttributeFieldNumber">
+            <summary>Field number for the "attribute" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.NodeProto.Attribute">
+            <summary>
+            Additional named attributes.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.NodeProto.DocStringFieldNumber">
+            <summary>Field number for the "doc_string" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.NodeProto.DocString">
+            <summary>
+            A human-readable documentation for this node. Markdown is allowed.
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ModelProto">
+             <summary>
+             Models
+            
+             ModelProto is a top-level file/container format for bundling a ML model and
+             associating its computation graph with metadata.
+            
+             The semantics of the model are described by the associated GraphProto.
+             </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ModelProto.IrVersionFieldNumber">
+            <summary>Field number for the "ir_version" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ModelProto.IrVersion">
+            <summary>
+            The version of the IR this model targets. See Version enum above.
+            This field MUST be present.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ModelProto.OpsetImportFieldNumber">
+            <summary>Field number for the "opset_import" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ModelProto.OpsetImport">
+             <summary>
+             The OperatorSets this model relies on.
+             All ModelProtos MUST have at least one entry that
+             specifies which version of the ONNX OperatorSet is
+             being imported.
+            
+             All nodes in the ModelProto's graph will bind against the operator
+             with the same-domain/same-op_type operator with the HIGHEST version
+             in the referenced operator sets.
+             </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ModelProto.ProducerNameFieldNumber">
+            <summary>Field number for the "producer_name" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ModelProto.ProducerName">
+            <summary>
+            The name of the framework or tool used to generate this model.
+            This field SHOULD be present to indicate which implementation/tool/framework
+            emitted the model.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ModelProto.ProducerVersionFieldNumber">
+            <summary>Field number for the "producer_version" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ModelProto.ProducerVersion">
+            <summary>
+            The version of the framework or tool used to generate this model.
+            This field SHOULD be present to indicate which implementation/tool/framework
+            emitted the model.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ModelProto.DomainFieldNumber">
+            <summary>Field number for the "domain" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ModelProto.Domain">
+             <summary>
+             Domain name of the model.
+             We use reverse domain names as name space indicators. For example:
+             `com.facebook.fair` or `com.microsoft.cognitiveservices`
+            
+             Together with `model_version` and GraphProto.name, this forms the unique identity of
+             the graph.
+             </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ModelProto.ModelVersionFieldNumber">
+            <summary>Field number for the "model_version" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ModelProto.ModelVersion">
+            <summary>
+            The version of the graph encoded. See Version enum below.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ModelProto.DocStringFieldNumber">
+            <summary>Field number for the "doc_string" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ModelProto.DocString">
+            <summary>
+            A human-readable documentation for this model. Markdown is allowed.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ModelProto.GraphFieldNumber">
+            <summary>Field number for the "graph" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ModelProto.Graph">
+            <summary>
+            The parameterized graph that is evaluated to execute the model.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ModelProto.MetadataPropsFieldNumber">
+            <summary>Field number for the "metadata_props" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.ModelProto.MetadataProps">
+            <summary>
+            Named metadata values; keys should be distinct.
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.StringStringEntryProto">
+            <summary>
+            StringStringEntryProto follows the pattern for cross-proto-version maps.
+            See https://developers.google.com/protocol-buffers/docs/proto3#maps
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.StringStringEntryProto.KeyFieldNumber">
+            <summary>Field number for the "key" field.</summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.StringStringEntryProto.ValueFieldNumber">
+            <summary>Field number for the "value" field.</summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorAnnotation.TensorNameFieldNumber">
+            <summary>Field number for the "tensor_name" field.</summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorAnnotation.QuantParameterTensorNamesFieldNumber">
+            <summary>Field number for the "quant_parameter_tensor_names" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorAnnotation.QuantParameterTensorNames">
+            <summary>
+            &lt;key, value> pairs to annotate tensor specified by &lt;tensor_name> above.
+            The keys used in the mapping below must be pre-defined in ONNX spec.
+            For example, for 8-bit linear quantization case, 'SCALE_TENSOR', 'ZERO_POINT_TENSOR' will be pre-defined as
+            quantization parameter keys.
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.GraphProto">
+             <summary>
+             Graphs
+            
+             A graph defines the computational logic of a model and is comprised of a parameterized 
+             list of nodes that form a directed acyclic graph based on their inputs and outputs.
+             This is the equivalent of the "network" or "graph" in many deep learning
+             frameworks.
+             </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.GraphProto.NodeFieldNumber">
+            <summary>Field number for the "node" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.GraphProto.Node">
+            <summary>
+            The nodes in the graph, sorted topologically.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.GraphProto.NameFieldNumber">
+            <summary>Field number for the "name" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.GraphProto.Name">
+            <summary>
+            The name of the graph.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.GraphProto.InitializerFieldNumber">
+            <summary>Field number for the "initializer" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.GraphProto.Initializer">
+            <summary>
+            A list of named tensor values, used to specify constant inputs of the graph.
+            Each TensorProto entry must have a distinct name (within the list) that
+            MAY also appear in the input list.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.GraphProto.SparseInitializerFieldNumber">
+            <summary>Field number for the "sparse_initializer" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.GraphProto.SparseInitializer">
+            <summary>
+            Initializers (see above) stored in sparse format.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.GraphProto.DocStringFieldNumber">
+            <summary>Field number for the "doc_string" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.GraphProto.DocString">
+            <summary>
+            A human-readable documentation for this graph. Markdown is allowed.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.GraphProto.InputFieldNumber">
+            <summary>Field number for the "input" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.GraphProto.Input">
+            <summary>
+            The inputs and outputs of the graph.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.GraphProto.OutputFieldNumber">
+            <summary>Field number for the "output" field.</summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.GraphProto.ValueInfoFieldNumber">
+            <summary>Field number for the "value_info" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.GraphProto.ValueInfo">
+            <summary>
+            Information for the values in the graph. The ValueInfoProto.name's
+            must be distinct. It is optional for a value to appear in value_info list.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.GraphProto.QuantizationAnnotationFieldNumber">
+            <summary>Field number for the "quantization_annotation" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.GraphProto.QuantizationAnnotation">
+            <summary>
+            This field carries information to indicate the mapping among a tensor and its
+            quantization parameter tensors. For example:
+            For tensor 'a', it may have {'SCALE_TENSOR', 'a_scale'} and {'ZERO_POINT_TENSOR', 'a_zero_point'} annotated,
+            which means, tensor 'a_scale' and tensor 'a_zero_point' are scale and zero point of tensor 'a' in the model.
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto">
+             <summary>
+             Tensors
+            
+             A serialized tensor value.
+             </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.DimsFieldNumber">
+            <summary>Field number for the "dims" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Dims">
+            <summary>
+            The shape of the tensor.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.DataTypeFieldNumber">
+            <summary>Field number for the "data_type" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.DataType">
+            <summary>
+            The data type of the tensor.
+            This field MUST have a valid TensorProto.DataType value
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.SegmentFieldNumber">
+            <summary>Field number for the "segment" field.</summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.FloatDataFieldNumber">
+            <summary>Field number for the "float_data" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.FloatData">
+            <summary>
+            For float and complex64 values
+            Complex64 tensors are encoded as a single array of floats,
+            with the real components appearing in odd numbered positions,
+            and the corresponding imaginary component appearing in the
+            subsequent even numbered position. (e.g., [1.0 + 2.0i, 3.0 + 4.0i]
+            is encoded as [1.0, 2.0 ,3.0 ,4.0]
+            When this field is present, the data_type field MUST be FLOAT or COMPLEX64.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Int32DataFieldNumber">
+            <summary>Field number for the "int32_data" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Int32Data">
+            <summary>
+            For int32, uint8, int8, uint16, int16, bool, and float16 values
+            float16 values must be bit-wise converted to an uint16_t prior
+            to writing to the buffer.
+            When this field is present, the data_type field MUST be
+            INT32, INT16, INT8, UINT16, UINT8, BOOL, or FLOAT16
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.StringDataFieldNumber">
+            <summary>Field number for the "string_data" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.StringData">
+            <summary>
+            For strings.
+            Each element of string_data is a UTF-8 encoded Unicode
+            string. No trailing null, no leading BOM. The protobuf "string"
+            scalar type is not used to match ML community conventions.
+            When this field is present, the data_type field MUST be STRING
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Int64DataFieldNumber">
+            <summary>Field number for the "int64_data" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Int64Data">
+            <summary>
+            For int64.
+            When this field is present, the data_type field MUST be INT64
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.NameFieldNumber">
+            <summary>Field number for the "name" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Name">
+            <summary>
+            Optionally, a name for the tensor.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.DocStringFieldNumber">
+            <summary>Field number for the "doc_string" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.DocString">
+            <summary>
+            A human-readable documentation for this tensor. Markdown is allowed.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.RawDataFieldNumber">
+            <summary>Field number for the "raw_data" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.RawData">
+             <summary>
+             Serializations can either use one of the fields above, or use this
+             raw bytes field. The only exception is the string case, where one is
+             required to store the content in the repeated bytes string_data field.
+            
+             When this raw_data field is used to store tensor value, elements MUST
+             be stored in as fixed-width, little-endian order.
+             Floating-point data types MUST be stored in IEEE 754 format.
+             Complex64 elements must be written as two consecutive FLOAT values, real component first.
+             Complex128 elements must be written as two consecutive DOUBLE values, real component first.
+             Boolean type MUST be written one byte per tensor element (00000001 for true, 00000000 for false).
+            
+             Note: the advantage of specific field rather than the raw_data field is
+             that in some cases (e.g. int data), protobuf does a better packing via
+             variable length storage, and may lead to smaller binary footprint.
+             When this field is present, the data_type field MUST NOT be STRING or UNDEFINED
+             </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.ExternalDataFieldNumber">
+            <summary>Field number for the "external_data" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.ExternalData">
+            <summary>
+            Data can be stored inside the protobuf file using type-specific fields or raw_data.
+            Alternatively, raw bytes data can be stored in an external file, using the external_data field.
+            external_data stores key-value pairs describing data location. Recognized keys are:
+            - "location" (required) - POSIX filesystem path relative to the directory where the ONNX
+                                      protobuf model was stored
+            - "offset" (optional) - position of byte at which stored data begins. Integer stored as string.
+                                    Offset values SHOULD be multiples 4096 (page size) to enable mmap support.
+            - "length" (optional) - number of bytes containing data. Integer stored as string.
+            - "checksum" (optional) - SHA1 digest of file specified in under 'location' key.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.DataLocationFieldNumber">
+            <summary>Field number for the "data_location" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.DataLocation">
+            <summary>
+            If value not set, data is stored in raw_data (if set) otherwise in type-specified field.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.DoubleDataFieldNumber">
+            <summary>Field number for the "double_data" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.DoubleData">
+            <summary>
+            For double
+            Complex128 tensors are encoded as a single array of doubles,
+            with the real components appearing in odd numbered positions,
+            and the corresponding imaginary component appearing in the
+            subsequent even numbered position. (e.g., [1.0 + 2.0i, 3.0 + 4.0i]
+            is encoded as [1.0, 2.0 ,3.0 ,4.0]
+            When this field is present, the data_type field MUST be DOUBLE or COMPLEX128
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Uint64DataFieldNumber">
+            <summary>Field number for the "uint64_data" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Uint64Data">
+            <summary>
+            For uint64 and uint32 values
+            When this field is present, the data_type field MUST be
+            UINT32 or UINT64
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Types">
+            <summary>Container for nested types declared in the TensorProto message type.</summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Types.DataType.Float">
+            <summary>
+            Basic types.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Types.DataType.Uint8">
+            <summary>
+            uint8_t
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Types.DataType.Int8">
+            <summary>
+            int8_t
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Types.DataType.Uint16">
+            <summary>
+            uint16_t
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Types.DataType.Int16">
+            <summary>
+            int16_t
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Types.DataType.Int32">
+            <summary>
+            int32_t
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Types.DataType.Int64">
+            <summary>
+            int64_t
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Types.DataType.String">
+            <summary>
+            string
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Types.DataType.Bool">
+            <summary>
+            bool
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Types.DataType.Float16">
+            <summary>
+            IEEE754 half-precision floating-point format (16 bits wide).
+            This format has 1 sign bit, 5 exponent bits, and 10 mantissa bits.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Types.DataType.Complex64">
+            <summary>
+            complex with float32 real and imaginary components
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Types.DataType.Complex128">
+            <summary>
+            complex with float64 real and imaginary components
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Types.DataType.Bfloat16">
+            <summary>
+            Non-IEEE floating-point format based on IEEE754 single-precision
+            floating-point number truncated to 16 bits.
+            This format has 1 sign bit, 8 exponent bits, and 7 mantissa bits.
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Types.DataLocation">
+            <summary>
+            Location of the data for this tensor. MUST be one of:
+            - DEFAULT - data stored inside the protobuf message. Data is stored in raw_data (if set) otherwise in type-specified field.
+            - EXTERNAL - data stored in an external location as described by external_data field.
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Types.Segment">
+            <summary>
+            For very large tensors, we may want to store them in chunks, in which
+            case the following fields will specify the segment that is stored in
+            the current TensorProto.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Types.Segment.BeginFieldNumber">
+            <summary>Field number for the "begin" field.</summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorProto.Types.Segment.EndFieldNumber">
+            <summary>Field number for the "end" field.</summary>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.SparseTensorProto">
+            <summary>
+            A serialized sparse-tensor value
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.SparseTensorProto.ValuesFieldNumber">
+            <summary>Field number for the "values" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.SparseTensorProto.Values">
+            <summary>
+            The sequence of non-default values are encoded as a tensor of shape [NNZ].
+            The default-value is zero for numeric tensors, and empty-string for string tensors.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.SparseTensorProto.IndicesFieldNumber">
+            <summary>Field number for the "indices" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.SparseTensorProto.Indices">
+            <summary>
+            The indices of the non-default values, which may be stored in one of two formats.
+            (a) Indices can be a tensor of shape [NNZ, rank] with the [i,j]-th value
+            corresponding to the j-th index of the i-th value (in the values tensor).
+            (b) Indices can be a tensor of shape [NNZ], in which case the i-th value
+            must be the linearized-index of the i-th value (in the values tensor).
+            The linearized-index can be converted into an index tuple (k_1,...,k_rank)
+            using the shape provided below.
+            The indices must appear in ascending order without duplication.
+            In the first format, the ordering is lexicographic-ordering:
+            e.g., index-value [1,4] must appear before [2,1]
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.SparseTensorProto.DimsFieldNumber">
+            <summary>Field number for the "dims" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.SparseTensorProto.Dims">
+            <summary>
+            The shape of the underlying dense-tensor: [dim_1, dim_2, ... dim_rank]
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorShapeProto">
+            <summary>
+            Defines a tensor shape. A dimension can be either an integer value
+            or a symbolic variable. A symbolic variable represents an unknown
+            dimension.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorShapeProto.DimFieldNumber">
+            <summary>Field number for the "dim" field.</summary>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorShapeProto.Types">
+            <summary>Container for nested types declared in the TensorShapeProto message type.</summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorShapeProto.Types.Dimension.DimValueFieldNumber">
+            <summary>Field number for the "dim_value" field.</summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorShapeProto.Types.Dimension.DimParamFieldNumber">
+            <summary>Field number for the "dim_param" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorShapeProto.Types.Dimension.DimParam">
+            <summary>
+            namespace Shape
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorShapeProto.Types.Dimension.DenotationFieldNumber">
+            <summary>Field number for the "denotation" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorShapeProto.Types.Dimension.Denotation">
+            <summary>
+            Standard denotation can optionally be used to denote tensor
+            dimensions with standard semantic descriptions to ensure
+            that operations are applied to the correct axis of a tensor.
+            Refer to https://github.com/onnx/onnx/blob/master/docs/DimensionDenotation.md#denotation-definition
+            for pre-defined dimension denotations.
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TensorShapeProto.Types.Dimension.ValueOneofCase">
+            <summary>Enum of possible cases for the "value" oneof.</summary>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto">
+             <summary>
+             Types
+            
+             The standard ONNX data types.
+             </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.TensorTypeFieldNumber">
+            <summary>Field number for the "tensor_type" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.TensorType">
+            <summary>
+            The type of a tensor.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.SequenceTypeFieldNumber">
+            <summary>Field number for the "sequence_type" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.SequenceType">
+            <summary>
+            The type of a sequence.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.MapTypeFieldNumber">
+            <summary>Field number for the "map_type" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.MapType">
+            <summary>
+            The type of a map.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.SparseTensorTypeFieldNumber">
+            <summary>Field number for the "sparse_tensor_type" field.</summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.OpaqueTypeFieldNumber">
+            <summary>Field number for the "opaque_type" field.</summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.DenotationFieldNumber">
+            <summary>Field number for the "denotation" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.Denotation">
+            <summary>
+            An optional denotation can be used to denote the whole 
+            type with a standard semantic description as to what is 
+            stored inside. Refer to https://github.com/onnx/onnx/blob/master/docs/TypeDenotation.md#type-denotation-definition
+            for pre-defined type denotations.
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.ValueOneofCase">
+            <summary>Enum of possible cases for the "value" oneof.</summary>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.Types">
+            <summary>Container for nested types declared in the TypeProto message type.</summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.Types.Tensor.ElemTypeFieldNumber">
+            <summary>Field number for the "elem_type" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.Types.Tensor.ElemType">
+            <summary>
+            This field MUST NOT have the value of UNDEFINED
+            This field MUST have a valid TensorProto.DataType value
+            This field MUST be present for this version of the IR.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.Types.Tensor.ShapeFieldNumber">
+            <summary>Field number for the "shape" field.</summary>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.Types.Sequence">
+            <summary>
+            repeated T
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.Types.Sequence.ElemTypeFieldNumber">
+            <summary>Field number for the "elem_type" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.Types.Sequence.ElemType">
+            <summary>
+            The type and optional shape of each element of the sequence.
+            This field MUST be present for this version of the IR.
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.Types.Map">
+            <summary>
+            map&lt;K,V>
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.Types.Map.KeyTypeFieldNumber">
+            <summary>Field number for the "key_type" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.Types.Map.KeyType">
+            <summary>
+            This field MUST have a valid TensorProto.DataType value
+            This field MUST be present for this version of the IR.
+            This field MUST refer to an integral type ([U]INT{8|16|32|64}) or STRING
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.Types.Map.ValueTypeFieldNumber">
+            <summary>Field number for the "value_type" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.Types.Map.ValueType">
+            <summary>
+            This field MUST be present for this version of the IR.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.Types.SparseTensor.ElemTypeFieldNumber">
+            <summary>Field number for the "elem_type" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.Types.SparseTensor.ElemType">
+            <summary>
+            This field MUST NOT have the value of UNDEFINED 
+            This field MUST have a valid TensorProto.DataType value
+            This field MUST be present for this version of the IR. 
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.Types.SparseTensor.ShapeFieldNumber">
+            <summary>Field number for the "shape" field.</summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.Types.Opaque.DomainFieldNumber">
+            <summary>Field number for the "domain" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.Types.Opaque.Domain">
+            <summary>
+            When missing, the domain is the same as the model's.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.Types.Opaque.NameFieldNumber">
+            <summary>Field number for the "name" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.TypeProto.Types.Opaque.Name">
+            <summary>
+            The name is optional but significant when provided.
+            </summary>
+        </member>
+        <member name="T:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.OperatorSetIdProto">
+             <summary>
+             Operator Sets
+            
+             OperatorSets are uniquely identified by a (domain, opset_version) pair.
+             </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.OperatorSetIdProto.DomainFieldNumber">
+            <summary>Field number for the "domain" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.OperatorSetIdProto.Domain">
+            <summary>
+            The domain of the operator set being identified.
+            The empty string ("") or absence of this field implies the operator
+            set that is defined as part of the ONNX specification.
+            This field MUST be present in this version of the IR when referring to any other operator set.
+            </summary>
+        </member>
+        <member name="F:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.OperatorSetIdProto.VersionFieldNumber">
+            <summary>Field number for the "version" field.</summary>
+        </member>
+        <member name="P:Microsoft.ML.Model.OnnxConverter.OnnxCSharpToProtoWrapper.OperatorSetIdProto.Version">
+            <summary>
+            The version of the operator set being identified.
+            This field MUST be present in this version of the IR.
+            </summary>
+        </member>
+    </members>
+</doc>
