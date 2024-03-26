@@ -5,9 +5,13 @@ from keras import models
 
 import socket
 
-model_path = "./3_5_24_model_full"
+import struct
 
-# This is idea implemented badly, but my sins have been pardoned by C# saints(literallyjustsmith, hordini).
+model_path = "./saved_models/3_5_24_model_full"
+numeric_vals_amount = 100 * 116
+image_vals_amount = 100 * 131 * 256 * 3
+
+
 if __name__ == "__main__":
     # Load Model
     model = models.load_model(model_path)
@@ -19,37 +23,38 @@ if __name__ == "__main__":
         sock.bind((host, port))
         sock.listen()
         # Accept Connection
-        conn, addr = sock.accept()
-        with conn:
-            print(f"Connection from {addr}")
-            conn_bytes = b""
-            try:
-                while True:  # YOU NEED TO BREAK THIS CONNECTION MANUALLY!!!
-                    # Receive numeric, image
-                    data = conn.recv(1024)  # increase this so you don't need to read multiple times.
-                    conn_bytes += data
+        while True:  # Continuously check for new connections.
+            conn, addr = sock.accept()
+            with conn:
+                print(f"Connection from {addr}")
+                conn_bytes = b""
+                try:
+                    while True:  # YOU NEED TO BREAK THIS CONNECTION MANUALLY!!!
+                        # Receive numeric, image
+                        data = conn.recv((4 * numeric_vals_amount) + (4 * image_vals_amount))  # recv all the bytes needed.
+                        conn_bytes += data
 
-                    # Check all required data received.
-                    is_required_data_present = False
-                    if not is_required_data_present:
-                        continue
-                    else:
-                        # Reformat data
-                        numeric_bytes = conn_bytes[0:116]
-                        image_bytes = conn_bytes[116:]
-                        numeric_vals = []
-                        image_vals = []
-                        full_tensor = None
-                        # inference
-                        prediction = model.predict(full_tensor)
-                        # Get most likely class.
-                        largest_class = 0
-                        for i in range(5):
-                            if prediction[i] > prediction[largest_class]:
-                                largest_class = i
-                        # send result(as int)
-                        conn.sendall(largest_class.to_bytes(4, 'big'))  # May need to convert endian-ness in C#.
-                        break  # Break loop and end connection.
-            # error handling
-            except Exception as e:
-                print(f"Badly caught exception: {e}\nHandle this properly pls :)")
+                        # Check all required data received.
+                        if not len(conn_bytes) == ((4 * numeric_vals_amount) + (4 * image_vals_amount)):
+                            continue
+                        else:
+                            # Reformat data
+                            numeric_bytes = conn_bytes[0:4 * numeric_vals_amount]
+                            image_bytes = conn_bytes[4 * numeric_vals_amount:]
+                            numeric_vals = np.array(struct.unpack('f' * numeric_vals_amount, numeric_bytes),  # Unpack from bytes to floats, put into a numpy array, then make sure it's the right shape.
+                                                    np.float32).reshape((100, 116))
+                            image_vals = np.array(struct.unpack('f' * image_vals_amount, image_bytes), np.float32).reshape(
+                                (100, 131, 256, 3))
+                            # inference
+                            prediction = model.predict([numeric_vals, image_vals])
+                            # Get most likely class.
+                            largest_class = 0
+                            for i in range(5):
+                                if prediction[i] > prediction[largest_class]:
+                                    largest_class = i
+                            # send result(as int)
+                            conn.sendall(struct.pack("i", largest_class))  # May need to convert endian-ness in C#.
+                            break  # Break loop and end connection.
+                # error handling
+                except Exception as e:
+                    print(f"Badly caught exception: {e}\nHandle this properly pls :)")

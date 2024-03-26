@@ -1,15 +1,22 @@
+using System;
+using System.IO;
+using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
-using System;
+
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.XR;
 using Unity.Jobs;
 using Unity.Collections;
+
 using Microsoft.ML;
 using Microsoft.ML.Data;
 using Microsoft.ML.Transforms.Onnx;
+
 
 public class ModelInput
 {
@@ -50,8 +57,8 @@ public class SicknessPredictor : MonoBehaviour
     public List<float> posedata;
     public Texture2D headsetImage;
 
-    private NativeArray<float> last100Numeric;
-    private NativeArray<float> last100Image;
+    NativeArray<float> last100Numeric;
+    NativeArray<float> last100Image;
 
     public string modelPath = "";
     
@@ -62,6 +69,10 @@ public class SicknessPredictor : MonoBehaviour
     int bufferCount = 0;
     PredictJob predictJobInstance;
     JobHandle predictJobHandle;
+
+    string pyScriptPath = "C:/Users/Jill/Desktop/echo.py";
+    string response;
+    Process p;
 
 
 
@@ -87,6 +98,16 @@ public class SicknessPredictor : MonoBehaviour
         }
         last100Numeric = new NativeArray<float>(100*116, Allocator.Persistent);
         last100Image = new NativeArray<float>(100 * 131 * 256 * 3, Allocator.Persistent);
+
+        ProcessStartInfo startInfo = new ProcessStartInfo
+        {
+            FileName = "python.exe",
+            Arguments = pyScriptPath,
+            UseShellExecute = false,
+            RedirectStandardOutput = false,
+            CreateNoWindow = true
+        };
+        //p = Process.Start(startInfo);
     }
 
     // Update is called once per frame
@@ -130,7 +151,6 @@ public class SicknessPredictor : MonoBehaviour
                 bufferCount = this.bufferCount,
                 prediciton = -1
             };
-            Debug.Log("Job Schedule");
             predictJobHandle = predictJobInstance.Schedule();
             jobRan = true;
         }
@@ -142,6 +162,7 @@ public class SicknessPredictor : MonoBehaviour
         predictJobHandle.Complete();
         last100Image.Dispose();
         last100Numeric.Dispose();
+        p.Close();
     }
 
     public float[] FlattenNumeric(List<List<float>> last100Data)
@@ -328,43 +349,57 @@ public class SicknessPredictor : MonoBehaviour
 
         public void Execute()
         {
-            NativeArray<float>.Copy(last100Numeric, 116, last100Numeric, 0, 99*116);  // Remove oldest(first) 116 values
-            NativeArray<float>.Copy(newNumeric, 0, last100Numeric, (99*116), 116);  // Add newest 116 values to end
+            const int numericVals = 116;
+            const int imageVals = 131 * 256 * 3;
 
-            NativeArray<float>.Copy(last100Image, 131 * 256 * 3, last100Image, 0, 99 * 131 * 256 * 3); // Remove oldest(first) image.
+            NativeArray<float>.Copy(last100Numeric, numericVals, last100Numeric, 0, 99 * numericVals);  // Remove oldest(first) numeric values
+            NativeArray<float>.Copy(newNumeric, 0, last100Numeric, (99 * numericVals), numericVals);  // Add newest numeric values to end
+
+            NativeArray<float>.Copy(last100Image, imageVals, last100Image, 0, 99 * imageVals); // Remove oldest(first) image.
             for(int i=0; i<newImage.Length; i++)
             {
-                last100Image[i + (99 * 131 * 256 * 3)] = ((float)newImage[i]) / 65535f;
+                last100Image[i + (99 * imageVals)] = ((float)newImage[i]) / 65535f;
             }
 
-            
+
 
             // Predict.
+            // This is implemented badly, but my sins have been pardoned by C# saints(literallyjustsmith, hordini).
             if (bufferCount >= 100)
             {  // Exit early if not enough observations.
-                ModelInput mi = new ModelInput();
-                mi.Numeric = last100Numeric.ToArray();
-                mi.Image = last100Image.ToArray();
 
-                string modelPathS = Encoding.ASCII.GetString(modelPath.ToArray());
-                string[] outputColumnNames = new[] { "dense_5" };
-                string[] inputColumnNames = new[] { "input_1", "input_2" };
-                var mlContext = new MLContext();
-                var pipeline = mlContext.Transforms.ApplyOnnxModel(outputColumnNames, inputColumnNames, modelPathS);
-                var dataView = mlContext.Data.LoadFromEnumerable<ModelInput>(new[] { mi });
-                //var transformedValues = pipeline.Fit(dataView).Transform(dataView);
-                //var output = mlContext.Data.CreateEnumerable<ModelOutput>(transformedValues, reuseRowObject: false);
+                using Socket sock = new Socket(SocketType.Stream, ProtocolType.Tcp);
+                IPAddress host;
+                IPAddress.TryParse("127.0.0.1", out host);
+                sock.Connect(host, 9696);
 
-                prediciton = 0; // Dummy value, pls remove.
-                Debug.Log("Job End");
+                const int numericBytes = sizeof(float) * 100 * numericVals;
+                const int imageBytes = sizeof(float) * 100 * imageVals;
 
-                //Single[] outArr = outThisFrame.Data;
+                byte[] commandBytes = new byte[numericBytes+imageBytes];
+                Buffer.BlockCopy(last100Numeric.ToArray(), 0, commandBytes, 0, numericBytes);
+                Buffer.BlockCopy(last100Image.ToArray(), 0, commandBytes, numericBytes, imageBytes);
 
-                //int greatestPrediction = 0;
-                //for(int i = 1; i<5; i++)
-                //{
-                //    if(outThisFrame)
-                //}
+
+
+                int bytesSent = 0;
+                while (bytesSent < commandBytes.Length)
+                {
+                    bytesSent += sock.Send(commandBytes, bytesSent, commandBytes.Length - bytesSent, SocketFlags.None);
+                }
+
+                byte[] responseBytes = new byte[4];
+                int bytesReceived;
+
+                while (true)
+                {
+                    bytesReceived = sock.Receive(responseBytes);
+
+                    if (bytesReceived == 0 || bytesReceived == 4) break;
+                }
+
+                prediciton = BitConverter.ToInt32(responseBytes, 0);
+                UnityEngine.Debug.Log(prediciton);
             }
             return;
         }
