@@ -7845,7 +7845,6 @@ GameObject:
   - component: {fileID: 675952021}
   - component: {fileID: 675952020}
   - component: {fileID: 675952022}
-  - component: {fileID: 675952023}
   m_Layer: 0
   m_Name: SicknessPredictor
   m_TagString: Untagged
@@ -7990,7 +7989,6 @@ MonoBehaviour:
   posedata: []
   headsetImage: {fileID: 0}
   modelPath: F:\Jill\code\unity\Thesis Project\Assets\saved_models\3_5_24_model_full.onnx
-  predictionThisFrame: 0
 --- !u!4 &675952021
 Transform:
   m_ObjectHideFlags: 0
@@ -8013,7 +8011,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 675952019}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9f68c8c2b93cf0e44bdca3269e29d6a5, type: 3}
   m_Name: 
@@ -8023,19 +8021,6 @@ MonoBehaviour:
   CtrlDebug: {fileID: 1871863451}
   PoseDebug: {fileID: 425019328}
   ImageDebug: {fileID: 1021970990}
---- !u!114 &675952023
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 675952019}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f080082a6b0fc954ea7de14217a3b5db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  working: 0
 --- !u!1001 &692397217
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -16268,7 +16253,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   predicted_sickness: 0
-  prevent_sickness: 0
   vignette: {fileID: 1984080874}
   MoveProvider: {fileID: 906742690}
   TurnProvider: {fileID: 906742690}
@@ -25043,7 +25027,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!222 &2086817404
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -25060,7 +25044,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2086817402}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -25069,7 +25053,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: -53.1, y: -48.24996}
+  m_AnchoredPosition: {x: 396, y: -48.24996}
   m_SizeDelta: {x: 192, y: 196.5}
   m_Pivot: {x: 1, y: 0}
 --- !u!114 &2086817406
@@ -25579,7 +25563,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &2138480384
 RectTransform:
   m_ObjectHideFlags: 0
@@ -25588,7 +25572,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2138480383}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0.00005209446}
+  m_LocalPosition: {x: 0, y: 0, z: 0.00005581975}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -25597,7 +25581,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: 141.99983, y: -48.24996}
+  m_AnchoredPosition: {x: 591.10016, y: -48.24996}
   m_SizeDelta: {x: 192, y: 196.5}
   m_Pivot: {x: 1, y: 0}
 --- !u!114 &2138480385

@@ -63,14 +63,17 @@ public class SicknessPredictor : MonoBehaviour
     public string modelPath = "";
     
 
-    public int predictionThisFrame = 0;
+    public NativeArray<int> prediction;
+
+    SicknessManager sm;
 
     bool jobRan = false;
     int bufferCount = 0;
     PredictJob predictJobInstance;
     JobHandle predictJobHandle;
 
-    string pyScriptPath = "C:/Users/Jill/Desktop/echo.py";
+    string pyScriptPath = "\\motionsicknesspredict.py";
+    string pyExePath = "\\venv\\Scripts\\python.exe";
     string response;
     Process p;
 
@@ -98,16 +101,23 @@ public class SicknessPredictor : MonoBehaviour
         }
         last100Numeric = new NativeArray<float>(100*116, Allocator.Persistent);
         last100Image = new NativeArray<float>(100 * 131 * 256 * 3, Allocator.Persistent);
+        prediction = new NativeArray<int>(1, Allocator.Persistent);
+
+        sm = GameObject.Find("SicknessManager").GetComponent<SicknessManager>();
+
+        string appPath = Application.dataPath.Substring(0, Application.dataPath.LastIndexOf('/') - 1);
+        appPath = appPath.Substring(0, appPath.LastIndexOf('/')).Replace('/', '\\');
 
         ProcessStartInfo startInfo = new ProcessStartInfo
         {
-            FileName = "python.exe",
-            Arguments = pyScriptPath,
-            UseShellExecute = false,
-            RedirectStandardOutput = false,
-            CreateNoWindow = true
+            WorkingDirectory = appPath,
+            FileName = appPath + pyExePath,
+            Arguments = appPath + pyScriptPath,
+            UseShellExecute = true,
+            CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden
         };
-        //p = Process.Start(startInfo);
+        p = Process.Start(startInfo);
     }
 
     // Update is called once per frame
@@ -133,11 +143,12 @@ public class SicknessPredictor : MonoBehaviour
                 
             // Handle completed job.
             predictJobHandle.Complete();
-            predictionThisFrame = predictJobInstance.prediciton;
             if (jobRan)
             {
                 last100Numeric.CopyFrom(predictJobInstance.last100Numeric);
                 last100Image.CopyFrom(predictJobInstance.last100Image);
+                prediction.CopyFrom(predictJobInstance.prediciton);
+                sm.ChangeSickness(prediction[0]);
                 predictJobInstance.newImage.Dispose();
             }
             bufferCount = (int)Math.Min(bufferCount+1, 100);
@@ -146,10 +157,10 @@ public class SicknessPredictor : MonoBehaviour
                 last100Numeric = this.last100Numeric,
                 last100Image = this.last100Image,
                 newNumeric = new NativeArray<float>(numData.ToArray(), Allocator.TempJob),
-                newImage = headsetImage.GetPixelData<ushort>(0),
-                modelPath = new NativeArray<byte>(Encoding.ASCII.GetBytes(this.modelPath),Allocator.TempJob),
+                newImage = headsetImage.GetPixelData<float>(0),
+                modelPath = new NativeArray<byte>(Encoding.ASCII.GetBytes(this.modelPath), Allocator.TempJob),
                 bufferCount = this.bufferCount,
-                prediciton = -1
+                prediciton = this.prediction
             };
             predictJobHandle = predictJobInstance.Schedule();
             jobRan = true;
@@ -162,7 +173,9 @@ public class SicknessPredictor : MonoBehaviour
         predictJobHandle.Complete();
         last100Image.Dispose();
         last100Numeric.Dispose();
-        p.Close();
+        prediction.Dispose();
+        p.Kill();
+        p.Dispose();
     }
 
     public float[] FlattenNumeric(List<List<float>> last100Data)
@@ -321,7 +334,7 @@ public class SicknessPredictor : MonoBehaviour
 
     public Texture2D GetHeadsetImage()
     {
-        Texture2D fullImage = new Texture2D(256, 131, TextureFormat.RGB48, false);
+        Texture2D fullImage = new Texture2D(256, 131, TextureFormat.RGBAFloat, false);
 
         RenderTexture.active = LeftEye;
         fullImage.ReadPixels(new Rect(0, 0, LeftEye.width, LeftEye.height), 0, 0, false);
@@ -339,11 +352,11 @@ public class SicknessPredictor : MonoBehaviour
         [DeallocateOnJobCompletion]
         public NativeArray<float> newNumeric;
         public NativeArray<float> last100Image;
-        public NativeArray<ushort> newImage;
+        public NativeArray<float> newImage;
 
 
         public int bufferCount;
-        public int prediciton;
+        public NativeArray<int> prediciton;
         [DeallocateOnJobCompletion]
         public NativeArray<byte> modelPath;
 
@@ -356,9 +369,14 @@ public class SicknessPredictor : MonoBehaviour
             NativeArray<float>.Copy(newNumeric, 0, last100Numeric, (99 * numericVals), numericVals);  // Add newest numeric values to end
 
             NativeArray<float>.Copy(last100Image, imageVals, last100Image, 0, 99 * imageVals); // Remove oldest(first) image.
-            for(int i=0; i<newImage.Length; i++)
+            int i = 0;
+            for(int j=0; j<newImage.Length; j++)
             {
-                last100Image[i + (99 * imageVals)] = ((float)newImage[i]) / 65535f;
+                if (j % 4 != 3)
+                {
+                    last100Image[i + (99 * imageVals)] = newImage[j];
+                    i++;
+                }
             }
 
 
@@ -398,8 +416,8 @@ public class SicknessPredictor : MonoBehaviour
                     if (bytesReceived == 0 || bytesReceived == 4) break;
                 }
 
-                prediciton = BitConverter.ToInt32(responseBytes, 0);
-                UnityEngine.Debug.Log(prediciton);
+                prediciton[0] = BitConverter.ToInt32(responseBytes, 0);
+                UnityEngine.Debug.Log(prediciton[0]);
             }
             return;
         }

@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from keras import models
-import keras.src.models.functional
 
 import socket
 
