@@ -381,13 +381,13 @@ def make_full_model(num_input_shape, img_input_shape) -> tuple[
 
 
 if __name__ == "__main__":
-    x, y = load_dataset([
-        '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Pottery/P22 VRLOG-6061422',
-        '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Epic_Roller_Coasters/P18 VRLOG-6051213',
-        '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Mini_Motor_Racing/P23 VRLOG-6061400',
-        '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/VR_Rome/P9 VRLOG-5091805',
-        '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Beat_Saber/P4 VRLOG-5051047'
-    ])
+    # x, y = load_dataset([
+    #     '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Pottery/P22 VRLOG-6061422',
+    #     '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Epic_Roller_Coasters/P18 VRLOG-6051213',
+    #     '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Mini_Motor_Racing/P23 VRLOG-6061400',
+    #     '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/VR_Rome/P9 VRLOG-5091805',
+    #     '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Beat_Saber/P4 VRLOG-5051047'
+    # ])
     #
     # train, test = test_train_split(x, y, split=0.8, batchsize=2)
 
@@ -418,7 +418,7 @@ if __name__ == "__main__":
     #                            )
     # full_model.evaluate(test)
 
-    full_model.load_weights("checkpoints/3_6_24_model_full.keras")
-    full_model.save("saved_models/3_6_24_model_full", save_format="tf")
+    full_model.load_weights("checkpoints/3_5_24_model_full.keras")
+    full_model.save("saved_models/3_5_24_model_full.keras")
 
     input("Training Finished. Press enter to quit.")

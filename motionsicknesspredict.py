@@ -2,12 +2,13 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from keras import models
+import keras.src.models.functional
 
 import socket
 
 import struct
 
-model_path = "./saved_models/3_5_24_model_full"
+model_path = "./saved_models/3_5_24_model_full.keras"
 numeric_vals_amount = 100 * 116
 image_vals_amount = 100 * 131 * 256 * 3
 
@@ -17,7 +18,7 @@ if __name__ == "__main__":
     model = models.load_model(model_path)
     # Wait for connections
     host = "127.0.0.1"
-    port = 96969
+    port = 9696
 
     with socket.socket() as sock:
         sock.bind((host, port))
@@ -42,19 +43,20 @@ if __name__ == "__main__":
                             numeric_bytes = conn_bytes[0:4 * numeric_vals_amount]
                             image_bytes = conn_bytes[4 * numeric_vals_amount:]
                             numeric_vals = np.array(struct.unpack('f' * numeric_vals_amount, numeric_bytes),  # Unpack from bytes to floats, put into a numpy array, then make sure it's the right shape.
-                                                    np.float32).reshape((100, 116))
+                                                    np.float32).reshape((1, 100, 116))
                             image_vals = np.array(struct.unpack('f' * image_vals_amount, image_bytes), np.float32).reshape(
-                                (100, 131, 256, 3))
+                                (1, 100, 131, 256, 3))
                             # inference
                             prediction = model.predict([numeric_vals, image_vals])
                             # Get most likely class.
                             largest_class = 0
                             for i in range(5):
-                                if prediction[i] > prediction[largest_class]:
+                                if prediction[0][i] > prediction[0][largest_class]:  # Prediction is ndarray(1,5)
                                     largest_class = i
+                            print(f"Prediction: {prediction}, {largest_class}")
                             # send result(as int)
                             conn.sendall(struct.pack("i", largest_class))  # May need to convert endian-ness in C#.
                             break  # Break loop and end connection.
                 # error handling
-                except Exception as e:
+                except TypeError as e:
                     print(f"Badly caught exception: {e}\nHandle this properly pls :)")
