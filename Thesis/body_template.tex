@@ -1,0 +1,965 @@
+% Note that if you want something in single space you can go back and
+% forth between single space and normal space by the use of \ssp and
+% \nsp.  If you want doublespacing you can use \dsp.  \nsp is normally
+% 1.5 spacing unless you use the doublespace option (or savepaper
+% option)
+%
+%(FORMAT) Usually you *don't* want to mess with the spacing for your
+%(FORMAT) final version.  If you think/know that the thesis template
+%(FORMAT) and/or thesis style file is incorrect/incomplete, PLEASE
+%(FORMAT) contact the maintainer.  THANK YOU!!!
+
+\chapter{INTRODUCTION}
+\label{chap:intro}
+% By labeling the chapter, I can refer to it later using the
+% label. (\ref{chap:intro}, \pageref{chap:intro}) Latex will take care
+% of the numbering.
+
+You can save yourself 12 minutes now by not reading this document;
+later on the average payback is 105-fold when you run into problems.
+
+\section{History}
+
+The class file \verb+wit-thesis.cls+ and this example are/have been
+maintained by
+\begin{itemize}
+\item Jan 2022 --- \emph{current}: Micah Schuster,
+  \verb+<schusterm@wit.edu>+.
+\end{itemize}
+
+
+While every effort is/has been made to make sure that the template and
+thesis style conforms to standard thesis templates, \textbf{no
+guarantees can be made.}  Depending on the thesis reviewer and his/her
+interpreation of what is Really Important$^{\hbox{\scriptsize TM}}$ in
+the eventual thesis manual, and his/her level of caffeination some theses fly
+through, and some get stuck even though they use the same template and
+style file.
+
+PLEASE let the maintainer know of any and all feedback you get from
+the thesis reviewer so that the template and/or style file can be
+updated as necessary.  THANK YOU!!!
+
+
+\section{Purpose}
+
+This document illustrates some of the typesetting tasks that are
+commonly encountered in a thesis containing
+mathematics and computer science\footnote{\texttt{http://en.wikibooks.org/wiki/LaTeX}\quad
+  provides a wealth of information regarding \LaTeX, check it out.}.
+Most formating issues will be automatically handled by the
+\LaTeX{} class file included with the source file for this document,
+but there may be some special circumstances that will require some
+tinkering with spacing, pagebreaks, etc.
+
+\LaTeX{} is a remarkably powerful package, but it does take some effort
+to learn.  The best plan is to start with something already written
+and learn from the example.  The current document was produced for
+this purpose.  This document illustrates how the student should format
+the chapters and sections of the thesis, prepare the bibliography, and
+include other appropriate items commonly found in a technical
+document.  The title page, signature page, acknowledgments page,
+abstract, and everything else are all formatted properly.
+
+For a general reference it is recommended that the student obtain the
+user's guide and reference manual of Leslie Lamport \cite{LAM}. The
+student should obtain copies of the files used to generate this
+document, then examine the text files used to generate the document
+and the \LaTeX{} output.  The files for this example thesis are the
+following.
+\begin{itemize}
+\item \verb+Makefile+: Contains ``recipes'' for building the thesis;
+  type typing \verb+make+, and \verb+make thesis.pdf+.
+\item \verb+abstract.tex+: Contains the abstract.
+\item \verb+append.tex+: Contains all the text for appendices.
+\item \verb+body.tex+: Contains all the text for chapters. 
+\item \verb+wit-thesis.cls+: Defines the layout and formatting.
+\item \verb+thbib.bib+:  Contains a bibliographical database.
+\item \verb+thesis.tex+: 
+  \begin{enumerate}
+  \item  Contains information for the title page, and other
+    front-matter.
+  \item Includes the files \verb+abstract.tex+,  \verb+body.tex+, and
+    \verb+append.tex+. 
+  \item Defines the bibliographical style (\verb+IEEEtran+ in this
+    example) and creates the bibliography using the file
+    \verb+thbib.tex+. If one wants another bibliographical style,
+    simpily download a new \verb+.bst+ file and apply to the thesis.
+  \end{enumerate}
+\item \verb+cos.eps+, \verb+mapping.eps+, \verb+plot2.eps+, and
+  \verb+somb.eps+: Encapsulated postscript files that are included by
+  \verb+body.tex+ (in the subdirectory \verb+Figures/+.)
+\end{itemize}
+
+Positioning and captioning of figures and tables should agree with standard
+thesis manuals.  Occasionally, \LaTeX{} does not break when you want it
+too, so you have to add a \verb+\newpage+ command to get
+the correct break, such as when a section header starts at the bottom
+of a page or when paragraphs have widows or orphans.
+
+
+\section{Format of the Thesis}
+This thesis template uses a standard section numbering format which
+implies that equations, definitions, tables, etc. should be numbered $N.M$, where $N$ is the
+chapter number and $M$ is successively increased through the chapter.
+\LaTeX{} does this automatically. Numbering of the equations is on the
+right side of the page (default in \LaTeX).  The student may use
+\textit{italics}, \textsc{small caps}, or \textbf{bold fonts} to
+highlight important phrases.
+Occasionally, \LaTeX{} does not break when you want it too, so
+you have to add a \verb+\newpage+ command to get the correct break,
+such as when a section header starts at the bottom of a page or when
+paragraphs have widows or orphans.
+
+Bibliographical citations are relatively easy.  Here is one \cite{ART}
+and another citation \cite{Lehto:1976} and we cannot forget Milnor
+\cite{Milnor:topdiff}.  Look at \verb+thbib.bib+ to see how to create
+the database for the bibliography.
+
+You type new paragraphs by just leaving an empty line between them.
+
+
+
+\section{Processing \LaTeX{} Files}
+
+The best way to learn \LaTeX{} is to take advantage of someone else's
+work from which you can model your document. This pseudo-thesis should
+give you a good working example to create your own document. The key
+commands to create any document are the following: \vspace{.15in}
+
+\noindent\texttt{%
+  \ssp % \ssp inside the { } makes the change temporary
+  \hspace*{5em}$\backslash$documentclass[\emph{options}]\{\emph{class}\}\\
+  \hspace*{5em}$\backslash$begin\{document\}\\
+  \hspace*{7em}Insert any text you want in here.\\
+  \hspace*{5em}$\backslash$end\{document\}\\
+}
+
+\noindent
+where \emph{class} is some class type.  For a WIT thesis you would
+normally use the \texttt{wit-thesis} class.  When you're writing your
+thesis and want a draft printout you can also add options such as
+\texttt{savepaper} which will single space your document, and use
+larger margins.  Most postscript viewers will allow you to print only
+a subset of pages as well.  The standard for the final thesis is $1
+\,1/2$ space.  If you want double spaced then uncomment the
+\texttt{doublespace} option.
+
+To process a \LaTeX{} document that you have named
+\texttt{filename.tex}, you simply type \texttt{latex filename}. For
+example, this document is generated by its driver file with
+\texttt{latex thesis}. If it is the first time and you have a
+bibliography, then you need the following sequence of commands:
+\vspace{.15in}
+
+\noindent\texttt{%
+  \ssp % \ssp inside the { } makes the change temporary
+  \hspace*{5em}latex filename\\  
+  \hspace*{5em}bibtex filename\\
+  \hspace*{5em}latex filename\\
+  \hspace*{5em}latex filename\\
+}
+\vspace{.15in}
+
+\noindent
+Unless you have added new references, the \texttt{bibtex filename} can
+be omitted. You will need to execute the \texttt{latex filename}
+command twice if there are any renumbering of items, like
+equations. When there are errors you can usually hit the carriage
+return and work through them\footnote{Do not panic if you get lots of
+  errors; fix the \emph{first} one!  The following errors are often
+  due to things being out-of-context due to the first error. ALWAYS
+  fix the first error before worrying about the others!!!
+  \emph{ALWAYS fix the first error before worrying about the
+    others!!!}  \textbf{ALWAYS fix the first error before worrying
+    about the others!!!} \textsc{ALWAYS fix the first error before
+    worrying about the others!!!}}.  Other alternatives include typing
+either \texttt{x} or \texttt{q} to allow it to proceed. The errors
+will be kept in a file called \texttt{filename.log}.  Be sure to pay
+attention to comments the \LaTeX{} produces as it gives you some
+warnings, such as when you need to make another run due to changes in
+the numbering of references or equations.
+
+After you have performed the above procedure, you will have a file
+named \texttt{filename.dvi} (or \texttt{thesis.dvi} in our case) which
+is a device independent file. There are several means of viewing your
+output. If you are working in an Xwindow environment, then the
+simplest procedure is to type \texttt{xdvi filename.dvi}, which will
+open a window for viewing the \LaTeX{} document. It will not include
+any postscript figures, but it is automatically updated each time you
+latex your document. I highly recommend starting with this
+environment. (If you are on rohan and accessing saturn, then you will
+need the environment setup described below for ghostview.)
+
+The second procedure for either viewing with ghostview or printing
+involves the conversion of the .dvi file to a postscript file. (You
+may want to examine \texttt{man dvips} for assistance.) The simplest
+way to convert the .dvi file to a postscript file is to type the
+following: \vspace{.15in}
+
+\texttt{
+  dvips -o filename.ps filename.dvi
+}
+\vspace{.15in}
+
+\noindent
+This creates the postscript file, \texttt{filename.ps}. If you do not
+need the entire document, then you can type: \vspace{.15in}
+
+\texttt{
+  dvips -p\emph{x} -l\emph{y} -o filename.ps filename.dvi
+}
+\vspace{.15in}
+
+\noindent
+where \texttt{x} is the number of the first page and \texttt{y} is the
+number of the last page.
+
+Then to get a hard copy you should use the standard printing commands
+of your system.  If you are on your own Linux system at home, usually
+\texttt{lpr filename.ps} will print the file.
+
+In case your computer system has a different paper size set up as
+default then ``letter'' you can force a letter paper size by adding
+\texttt{-t letter} as an option to \texttt{dvips}.  This can happen if
+you are running in a different language then American English.
+
+The included makefile simplifies many of the sequences of commands that you
+might use.  For example, just type \texttt{make} to create a
+postscript file or \texttt{make view} to create a postscript and view
+it using a postscript viewer. Also, make clean will remove all the
+.log .aux .ps .dvi files.
+
+If you are using an IDE or editor that can compile using bibtex,
+it is probably best to follow their instuctions.
+
+
+\section{HELP! --- My Bibliography (or other Sub-part) in Not Working!}
+
+Bibliographies, Glossaries, and other ``special'' parts of a \LaTeX{}
+document must be built separately (but not independent) from the main
+\texttt{\textbf{latex thesis}} build.  The build work flow ::\\
+
+\begin{tabular}{lp{0.5\linewidth}}
+  \hline
+  \textsc{Build Command}
+  &
+    \textsc{Comment}
+  \\
+  \hline
+  \texttt{\textbf{latex thesis}}
+  &
+    The first pass builds the structure, and produces ``hooks'' where
+    things (like bibliographies, references, glossaries, etc.) need to
+    go.
+  \\
+  \texttt{\textbf{bibtex thesis}}
+  &
+    Build the bibliography (everyone needs this)
+  \\
+  \texttt{\textbf{makeglossaries thesis}}
+  &
+    Build the glossary (if needed)
+  \\
+  \texttt{\textbf{latex thesis}}
+  &
+    The second pass inserts bibliographies, references, glossaries,
+    etc.\ into the document, but some cross-referencing is still
+    undefined.
+  \\
+  \texttt{\textbf{latex thesis}}
+  &
+    The third pass resolves the final cross-referencing and the
+    document is complete.
+  \\
+  \hline
+\end{tabular}
+
+\vspace{\baselineskip}
+
+How you set this up depends on your build environment.
+
+
+\section{Building the Document using a Graphical User Interface}
+\label{sec:GUI}
+
+\textbf{TEX}MAKER (\texttt{https://www.xm1math.net/texmaker/}) is a
+popular cross-platform (Windows, MacOsX, Linux) \LaTeX{} editor /
+build-environment.  Note that it is only a front-end, and you also
+need the actual \LaTeX{}
+(\texttt{https://www.latex-project.org/get/\#tex-distributions})
+back-end to make it run.  Some \TeX{} distributions (\emph{e.g.}\/
+MacTeX) include other editors / build-environments.
+
+You have to configure TEXMAKER's ``quickbuild'' setup so that all the
+pieces of the document get processed.  \textbf{Options} $\rightarrow$
+\textbf{Configure Texmaker} $\rightarrow$ \textbf{Quick Build}
+\textbf{PdfLaTeX + Bib(la)tex + PdfLaTeX + View Pdf} should get you up
+and running; this does not cover the building of glossaries.  If you
+need one, there are several options for including the glossary build;
+please consult ``Uncle \textbf{Google}'' for further help.
+
+
+
+
+\chapter{MISCELLANEOUS COMMANDS: AN INTRODUCTION TO EQUATIONS,
+  FIGURES, AND TABLES}
+
+In this chapter we see how equations, figures, and tables are
+created, enumerated and referenced.  We also play around with lengths
+of chapter and section headings.  For example, this chapter begins
+with a long chapter heading.
+Later on there is a very long section heading.  These examples show
+how the WIT thesis class file automatically handles formatting.
+
+
+
+\section{Basic Math}
+
+You can have fun formulas, such as $x= 7 y^x$.  If you want the
+equations displayed you can use two dollar signs, \$\$ to enclose the
+mathematics, or you can use
+
+\medskip\noindent
+\texttt{%
+  \hspace*{2em}$\backslash$begin\{equation*\} \\
+  \hspace*{3em}math stuff \\
+  \hspace*{2em}$\backslash$end\{equation*\}
+}\\%
+as in
+
+\medskip\noindent\hspace*{2em}\begin{minipage}{4.5in}
+\begin{verbatim}
+\begin{equation*}
+  \int_{\partial \Omega} \omega = \int_{\Omega} d\omega.
+\end{equation*}
+\end{verbatim}
+\end{minipage}
+
+\medskip\noindent
+which produces
+\begin{equation*}
+  \int_{\partial \Omega} \omega = \int_{\Omega} d\omega.
+\end{equation*}
+
+There are several other ways to display equations.  The code for this
+one (which you can see in \verb+body.tex+) aligns all the equal
+signs.
+\begin{align}
+  (x+2)^3 & = (x+2)(x+2)^2 \\
+  &= (x+2)(x^2+4x+ 4) \\
+  &= x^3+ 6x^2 + 12x + 8
+\end{align}
+Notice that this last set of equations is numbered, but the previous
+one is not.  The * in the \LaTeX{} code eliminates the numbering.
+
+
+\section{Equations}
+
+Enumeration of equations, definitions, tables, is handled
+automatically by \LaTeX.  Each of these items may be given a label
+using \verb+\label{<labelname>}+.  The item can then be refereed to
+by \verb+\ref{<labelname>}+.  Below we demonstrate how
+to create and label an equation. Our first is a general differential
+equation,
+\begin{equation}
+  \dot{x} = f(t,x),\qquad x(0)= x_0. \label{de1}
+\end{equation}
+To see that the numbering is going fine we insert a matrix system as
+follows:
+\begin{equation}
+  \dot{y} =
+  \begin{bmatrix}
+    a_1 & 0 & \cdots & 0 \\
+    0 & a_2 & \cdots & 0 \\
+    \vdots & \vdots & \ddots & \vdots \\
+    0 & 0 & \cdots & a_n
+  \end{bmatrix}
+  y.
+  \label{de2}
+\end{equation}
+The numbering is valuable when one wants to refer to the
+Equations~(\ref{de1}) and (\ref{de2}). Note that when referring to
+Equation~(\ref{de1}) you must capitalize the word equation. Also, when
+you enter a specific equation, figure, or table, \emph{e.g.,}
+Eqn.~(\ref{de1}), then you should type a $\tilde{\phantom{x}}$ between
+the word Eqn., Fig., or Table and its labeling number to prevent
+inappropriate division of the label at the end of a line.
+
+To display an equation without numbering, one uses the math
+displaystyle mode which works as follows:
+\begin{equation*}
+  \dot{y} = g(y),
+\end{equation*}
+which is an autonomous equation in $y$. The $y$ at the end of the last
+sentence is in standard math mode. Further information on equations is
+provided in Appendix~A.
+
+
+\section{Figures or How to Get into Real Trouble if You Take Advantage
+  of What \LaTeX{} Can Do}
+
+This section shows how to display figures and refer to them in the
+text.  \LaTeX{} does have the ability to insert postscript files using
+the \verb+graphicx+ package.  Make sure to include
+\verb+\usepackage{graphicx}+ in your preamble, that is between the
+\LaTeX{} commands \verb+\documentclass+ and
+\verb+\begin{document}+. \emph{See}
+  \verb+http://en.wikibooks.org/wiki/LaTeX/Importing_Graphics+
+  \emph{for information about importing graphics into your
+    document.}
+
+To insert a figure that is formatted in encapsulated postscript, which
+must include a Bounding Box line which is named \texttt{fname.ps} you
+do the following:
+\\
+\texttt{ \hspace*{0.5in} $\backslash$begin\{figure\}[ht]
+  \\
+  \hspace*{0.75in}
+  $\backslash$includegraphics[width=$\backslash$linewidth]\{fname.eps\}
+  \\
+  \hspace*{0.75in} $\backslash$caption\{Insert a caption
+  here. $\backslash$label\{figlabel\} \}
+  \\
+  \hspace*{0.5in} $\backslash$end\{figure\} }
+\\
+to produce the figure. The \textbf{[ht]} argument to the figure
+command is a \emph{suggestion} to \LaTeX{} to put the figure
+\textbf{[h]}ere, or at the \textbf{[t]}op of the page; \textbf{[p]}
+for a separate page is also possible.
+Avoid\marginpar{\small\textbf{\textit{Style note}}} putting tables and
+figures at the \textbf{[b]}ottom of the page as this is frowned upon
+in standard thesis manuals; the
+preference\marginpar{\scriptsize\raggedright\textbf{NEVER put anything
+    in the margin like this!!!}} is to put tables and figures right
+after they are first referenced, \emph{i.e.}\ \textbf{[h]}ere, but
+at the \textbf{[t]}op of the following page is acceptable in cases
+where it does not fit \textbf{[h]}ere.  You can make the suggestion
+stronger by saying \textbf{[h!]}  for ``\textbf{[h]}ere\textbf{!},''
+but the internal rules may still override your suggestion.
+``\verb+\linewidth+'' above can be replaced by some
+number of inches (or other size \LaTeX{} size measure such as
+\texttt{pt}, \texttt{em}, or \texttt{ex}).  This will left justify the
+figure.  Centering is a little more complicated.  We place everything
+in a \texttt{minipage} environment:
+\\
+\texttt{ \hspace*{0.5in} $\backslash$begin\{figure\}[ht]
+  \\
+  \hspace*{0.75in} $\backslash$centering
+  \\
+  \hspace*{0.75in} $\backslash$begin\{minipage\}\{$x$in\}
+  \\
+  \hspace*{1.0in}
+  $\backslash$includegraphics[width=$\backslash$linewidth]\{fname.ps\}
+  \\
+  \hspace*{1.0in} $\backslash$caption\{Insert a caption
+  here. $\backslash$label\{figlabel\} \}
+  \\
+  \hspace*{0.75in} $\backslash$end\{minipage\}
+  \\
+  \hspace*{0.5in} $\backslash$end\{figure\} }
+
+To demonstrate how we would like to see figures in the
+thesis we provide the following. If you are examining these files
+with \texttt{xdvi}, you will only see a blank spot. However, both
+printed and ghostview methods described in the previous chapter will
+allow viewing.  Suppose that we create a figure to graph the curve
+\begin{equation}
+  y=\sin(\omega t), \label{gr1}
+\end{equation}
+where $\omega$ is the circular frequency.  Figure~\ref{fig1} is a
+graph of Equation~(\ref{gr1}), and figure~\ref{fig:graph} is an
+illustration of a mapping in the complex plane. The interval of time
+viewed is $t \in [-5,5]$. The figure reference should be denoted by
+either Fig.~\ref{fig1} or by Figure~\ref{fig1} with specific figures
+capitalized as noted here.
+\begin{figure}[ht]
+  \centering
+  \begin{minipage}{0.9\linewidth}
+    \includegraphics[width=\linewidth]{Figures/plot2.eps}
+    \caption{This is a graph of the above equation, where the circular
+      frequency is taken as $\omega = 2$.\label{fig1} }
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[ht]
+  \centering
+  \begin{minipage}{4.5in}
+    \includegraphics[width=\linewidth]{Figures/mapping.eps}
+    \caption{Mapping $f(x)$ from the complex plane to itself. \label{fig:graph}}
+  \end{minipage}
+\end{figure}
+
+
+When you have a collection of figures and large figures, you may want
+to delay insertion of them until the end of the chapter. At the end of
+this chapter we are including a full page figure (Fig.~\ref{fullfig})
+to demonstrate this \LaTeX{} command. Note that if you cannot obtain
+postscript figures or are having too much trouble using the technique
+described above, then you can use the \verb+\vspace+ command to
+provide an empty space in the manuscript, then use the old-fashioned
+technique of taping in your figure and photocopying it.
+
+% 
+% If you have oversize full page figures, the following
+% might come in handy
+% 
+% \figurecoversheet{\label{figure:oversize} Caption goes here}
+
+
+\section{Tables}
+
+Tables should be easily readable and properly labeled. In this section we want to
+demonstrate how \LaTeX{} handles tables. More complicated examples can
+be found in Lamport's book \cite{LAM,LAM2}. We begin with a small table,
+given by Table \ref{tab1} which inserts nicely into the text.  Note
+that the same centering trick as was employed for figures is done here
+and we set the width of the \texttt{minipage} environment to 1.9
+inches.
+% 
+
+\begin{table}[hbt]
+  \centering
+  \begin{minipage}{1.9in}
+    \caption{A Small Table for Listing Some Parameters Used in Some
+      Numerical Procedure\label{tab1}.}
+    \begin{tabular}{|c||c|c|c|c||}    \hline
+      Trial &	a  &  b & c & $\omega$ \\ \hline \hline
+      1 & 5 & 10  & 15 & $\pi$ \\ \hline
+      2 & 10 & 20  & 15 & $2\pi$ \\ \hline
+    \end{tabular}
+  \end{minipage}
+\end{table}
+% 
+
+The\marginpar{\small\textbf{\textit{Style note}}} manual however
+allows for the caption to be a little wider if the table is really
+small and so we can use a wider \texttt{minipage} and then center the
+table inside there.  See for example Table \ref{wtab} where we used
+width of 3.5 inches.
+% 
+\begin{table}[hbt]
+  \centering
+  \begin{minipage}{3.5in}
+    \centering
+    \caption{Another Small Table for Listing Some Parameters Used in a
+      Numerical Procedure\label{wtab}.}
+    \begin{tabular}{|c||c|c|c|c||}    \hline
+      Trial &	a  &  b & c & $\omega$ \\ \hline \hline
+      1 & 5 & 10  & 15 & $\pi$ \\ \hline
+      2 & 10 & 20  & 15 & $2\pi$ \\ \hline
+    \end{tabular}
+  \end{minipage}
+\end{table}
+
+Note that you can use the \texttt{center} environment instead of
+\texttt{$\backslash$centering} but that might add a little bit of
+unwanted whitespace.  With \texttt{$\backslash$centering} on the other
+hand, you might have to put braces around the text you wish to center
+and sometimes need to add a \texttt{$\backslash$par}.  If you use it
+inside a \texttt{minipage}, \texttt{table} or \texttt{figure}
+environment, you don't have to really worry about that.  Note however
+that without the use of \texttt{minipage} you cannot center the
+caption as it automatically left aligns itself to conform with standard
+thesis manuals.
+
+Tables can also be left aligned see for example Table \ref{ltab}.
+Here we don't use the \texttt{minipage} environment, but we must then
+add linebreaks so that the table caption does not go wider then the
+table itself.  We need to add then two titles, one for the list of
+tables and one for the caption here.  The former will not have line
+breaks and the latter will.
+% 
+\begin{table}[htb]
+  \caption[
+  Another Such Table but Left Aligned]{
+    Another Such\\Table but Left Aligned\label{ltab}}
+  \begin{tabular}{|c||c|c|c|c||}    \hline
+    Trial &	a  &  b & c & $\omega$ \\ \hline \hline
+    1 & 5 & 10  & 15 & $\pi$ \\ \hline
+    2 & 10 & 20  & 15 & $2\pi$ \\ \hline
+  \end{tabular}
+\end{table}
+
+Sometimes a table might not fit onto a single page, in this case you
+must not use the \texttt{table} environment, but instead the
+\texttt{longtable} environment. Do note that \texttt{longtable}
+automatically centers so you need not worry about that.  See Table
+\ref{totallyrandom} for some absolutely random numbers.  To use
+\texttt{longtable} environment you must include the \texttt{longtable}
+package in your preamble.
+
+\clearpage%
+\setlength\LTcapwidth{0.9\linewidth}
+\begin{longtable}{|l|l|l|}
+  % You may need to modify the \LTcapwidth if the title wraps too
+  % early, or if it makes your table too large
+  %
+  % Issue the command ---
+  % \setlength\LTcapwidth{\linewidth}
+  % --- prior ro the longtable environment
+  %
+  \caption{A Table of Some Totally Random Numbers. Often (when there
+  are other \texttt{table}\,s defined before the \texttt{longtable}) it is
+  necessary to issue the command \texttt{$\backslash$clearpage}
+  prior to the longtable environment; otherwise table-numbering and
+  page-ordering of table/longtable object may get VERY
+  strange.\label{totallyrandom}} \\
+
+  % Here are our column headings
+  \hline
+  \multicolumn{1}{|l|}{\textbf{First}} &
+  \multicolumn{1}{l|}{\textbf{Second}} &
+  \multicolumn{1}{l|}{\textbf{Third}} \\
+  \hline \hline
+  \endfirsthead
+
+  % Here is the caption on other pages
+  \caption*{\tablename\ \thetable{} (Continued)} \\
+  \hline \multicolumn{1}{|l|}{\textbf{First}} &
+  \multicolumn{1}{l|}{\textbf{Second}} &
+  \multicolumn{1}{l|}{\textbf{Third}} \\ \hline \hline
+  \endhead
+
+  \multicolumn{3}{r}{\textbf{(table continues)}}
+  \endfoot
+
+  \hline
+  \endlastfoot
+
+  $16883.20050 \times 64.19591$ & $23174^{2905}$ & $(5112,5468,27117)$ \\ \hline
+  $7216.3398 \times 12239.16770$ & $19961^{9127}$ & $(16136,21997,26051)$ \\ \hline
+  $15977.29588 \times 5732.19698$ & $14995^{26728}$ & $(28634,14278,17183)$ \\ \hline
+  $24699.2338 \times 8803.18474$ & $19221^{28853}$ & $(18539,6044,19259)$ \\ \hline
+  $21444.11156 \times 24727.15793$ & $18372^{28126}$ & $(28032,2375,15319)$ \\ \hline
+  $4391.18511 \times 4548.30442$ & $1720^{1369}$ & $(3406,21419,16364)$ \\ \hline
+  $30135.17285 \times 30643.14550$ & $9216^{213}$ & $(23353,27690,19435)$ \\ \hline
+  $19438.13461 \times 25479.5929$ & $2137^{3868}$ & $(30657,17930,22240)$ \\ \hline
+  $26015.13194 \times 24615.8566$ & $17585^{10358}$ & $(13114,15259,12079)$ \\ \hline
+  $14483.18666 \times 730.30848$ & $16033^{18015}$ & $(28723,30583,27231)$ \\ \hline
+  $28936.21168 \times 22153.15603$ & $7838^{2847}$ & $(8315,13767,4984)$ \\ \hline$12183.11656 \times 22915.1655$ & $4903^{3341}$ & $(26271,13469,20927)$ \\ \hline
+  $3861.26584 \times 3418.15940$ & $8299^{22084}$ & $(16670,6379,5349)$ \\ \hline
+  $1917.2334 \times 3164.29148$ & $31271^{24332}$ & $(18534,14106,32170)$ \\ \hline
+  $21381.22421 \times 13170.26365$ & $1836^{24826}$ & $(16512,3492,29730)$ \\ \hline
+  $19854.29763 \times 10431.8013$ & $856^{4247}$ & $(11431,16797,12547)$ \\ \hline$748.699 \times 18926.6097$ & $2617^{21261}$ & $(9262,31765,19764)$ \\ \hline
+  $826.17531 \times 1102.229$ & $6144^{23524}$ & $(13399,32510,25360)$ \\ \hline
+  $5457.16254 \times 28852.2419$ & $3340^{25847}$ & $(12851,11353,26704)$ \\ \hline
+  $17098.22785 \times 10733.29645$ & $23533^{11432}$ & $(15804,29630,14049)$ \\ \hline
+  $4297.6124 \times 13047.24061$ & $6951^{30578}$ & $(25163,7180,3955)$ \\ \hline
+  $15919.20579 \times 3697.8512$ & $26036^{19951}$ & $(4596,28456,23292)$ \\ \hline
+  $30444.8539 \times 1877.24380$ & $25637^{24662}$ & $(2345,22515,15427)$ \\ \hline
+  $13777.5551 \times 12290.27827$ & $9848^{18414}$ & $(8106,1141,25365)$ \\ \hline$5916.26304 \times 32545.9871$ & $9456^{20356}$ & $(13568,17968,13625)$ \\ \hline
+  $752.22564 \times 9313.24044$ & $20240^{17852}$ & $(25921,11852,10721)$ \\ \hline
+  $17816.14197 \times 468.475$ & $27975^{6019}$ & $(12765,23034,15867)$ \\ \hline
+  $31180.31140 \times 17008.23777$ & $4288^{10545}$ & $(23555,14160,20001)$ \\ \hline
+  $11143.27728 \times 5201.24768$ & $28480^{27765}$ & $(1313,19756,15238)$ \\ \hline
+  $19165.12910 \times 27090.29887$ & $30726^{8520}$ & $(30355,31201,3727)$ \\ \hline
+  $3607.11199 \times 26761.19474$ & $9611^{25133}$ & $(3715,620,29421)$ \\ \hline
+  $14260.24175 \times 10813.1493$ & $2551^{5774}$ & $(6694,27319,1486)$ \\ \hline
+  $1691.28633 \times 21243.16929$ & $15030^{1385}$ & $(11252,12149,32111)$ \\ \hline
+  $19772.9737 \times 30544.23499$ & $13344^{8975}$ & $(17492,50,18586)$ \\ \hline
+  $9857.3765 \times 19207.6510$ & $18025^{10614}$ & $(17324,19518,13165)$
+
+\end{longtable}
+
+
+
+
+A larger table, given by Table \ref{tab2} and reproduced from another
+document, then you may need to allow an entire page for the
+table. This is done by typing the command
+\verb+\begin{table}[p]+. This test example is included in the
+minipage environment to show how a footnote\footnote{We also need to
+  see how a regular footnote appears in the text, so one was inserted
+  here. Multiple lines are easily handled by \LaTeX.}  can be added to
+a table.  Several problems have been noted before on how \LaTeX\
+handles the location of the table in the text.
+\begin{table}[p]
+  \centering
+  \begin{minipage}{3.7in}
+    \caption{Computations for Products of the \emph{RRN} Genes at Different
+      Growth Rates\label{tab2}}
+    \begin{tabular}{|c||c|c|c|c|c||}	 \hline
+      $\tau$(min)  &  100  &	60 & 40 & 30 & 24 \\ \hline \hline
+      $C$ period & 67 & 50  & 45 & 43 & 42 \\ \hline
+      $D$ period & 30 & 27  & 25 & 24 & 23 \\ \hline
+      $V_0$ & 0.437 & 0.577 & 0.815 & 1.15 & 1.63 \\ \hline
+      $\bar c$\footnote{$\times 1000\ {\rm ribosomes}/\mu{\rm m}^3$.}
+      & 11.1 & 16.8 & 22.1 & 28.1 & 31.4 \\ \hline
+      $\bar c_{85}$\footnote{$\times 1000\ {\rm ribosomes}/\mu{\rm m}^3$,
+        representing the average concentration of the product of the
+        \emph{rrn} gene located at $85'$.} & 1.73 & 2.68 & 3.65 & 4.81
+      & 5.57 \\ \hline 
+      $\bar c_{57}$\footnote{$\times 1000\ {\rm ribosomes}/\mu{\rm m}^3$,
+        representing the average concentration of the product of the \emph{rrn} gene
+        located at $57'$.} & 1.36 & 1.98 & 2.43 & 2.87 & 2.96 \\ \hline
+      $\bar c_{85}({\scriptstyle\times 100})/\bar c$\footnote{Percentage of
+        $\bar c$ produced by the \emph{rrn} gene located at $85'$.} & 15.6 & 15.9 &
+      16.5 & 17.1 & 17.7 \\ \hline
+      $\bar c_{57}({\scriptstyle\times 100})/\bar c$\footnote{Percentage of
+        $\bar c$ produced by the \emph{rrn} gene located at $57'$.} & 12.3 & 11.8 &
+      11.0 & 10.2 & 9.44 \\ \hline
+      $\bar c_{85}/\bar c_{57}$ & 1.27 & 1.35 & 1.50 & 1.68 & 1.88 \\ \hline
+      $r$\footnote{Initiations/min/gene.} & 3.75 & 10.27
+      & 22.56 & 38.42 & 56.98 \\ \hline
+      $c_{max}$\footnote{$\times 1000\ {\rm ribosomes}/\mu{\rm m}^3$, representing
+        the maximum concentration during the cell cycle.} & 11.28 & 17.04
+      & 22.33 & 28.36 & 31.77 \\ \hline
+      $c_{max}/c_{min}$\footnote{Ratio of maximum to minimum concentration
+        during the cell cycle.} & 1.041 & 1.036 & 1.027 & 1.024 & 1.026 \\ \hline
+    \end{tabular}
+  \end{minipage}
+\end{table}
+
+\begin{figure}[p]
+  \centering
+  \begin{minipage}{4.5in}
+    \includegraphics[width=\linewidth]{Figures/somb.eps}
+    \includegraphics[width=\linewidth]{Figures/cos.eps}
+    \caption{The top graph is the function $z = \sin(r)/r$, while
+      the bottom surface is the function $z = \cos(r)$. \label{fullfig}}
+  \end{minipage}
+\end{figure}
+
+
+
+\section{Potential Pitfalls}
+
+(Oh yeah, there must be text between sectioning commands...)
+
+\subsection{Tables and Figures}
+
+There is a conflict between the \verb+\usepackage{subfig}+,
+\verb+\usepackage{caption}+ and the \verb+wit-thesis.cls+ class
+specification.  The long table captions show up correctly (bold and
+left aligned with table).  Use \verb+\usepackage{subfigure}+ instead
+and all captions, as well as the list of tables page show up ok.
+
+If you insist on \verb+\usepackage{subfig}+, make sure to
+\textbf{first} issue the command
+\verb+\usepackage[bf,labelsep=period,textfont=bf]{caption}+ where the
+first "\verb+bf+" makes the labels "Figure n" bold;
+\verb+labelsep=period+ says "use '.' instead of ':'; and
+\verb+textfont=bf+ makes the caption text bold.  This may solve your
+subfig problems.
+
+
+Table captions (``table titles'' \cite{ART}) go
+ABOVE\marginpar{\small\textbf{\textit{Style note}}} the table, must be
+in \emph{headline style} where ``all major words are capitalized,''
+and there is no period at the end of the caption; in figure captions
+only the first word is capitalized, and there is a period at the
+end. --- \textbf{THE STYLE DOES NOT CURRENTLY ENFORCE THIS, \emph{YOU}
+  HAVE TO DO IT MANUALLY.}
+
+Charts, graphs, diagrams, maps, photographs, and other graphic
+illustrations should all be labeled as \emph{Figures}.
+Figure captions are capitalized
+sentence style in the text; therefore, the List of Figures entries
+should be in sentence style.
+
+All tables and figures must be referenced in text \emph{prior} to
+their appearance. Those references should be by number.
+
+
+
+\subsubsection{Centered Tables Figures}
+\label{sec::centered:tab:fig}
+
+It is not as simple as adding \verb+\centering+ into the figure or
+table environment as that will center the caption on the page rather
+then left align it with the left edge of the figure or table.  So the
+way to solve this is to figure out the width of the figure or table
+and add it in a minipage and center that.  For example if our table is
+2 inches wide when typeset, then we could do
+\begin{verbatim}
+\begin{table}[ht]
+  \centering
+  \begin{minipage}{2in}
+    \caption{Caption goes here}
+    ... here is your table ...
+  \end{minipage}
+\end{table}
+\end{verbatim}
+
+
+
+\subsection{Margins}
+
+It is believed that the \verb+wit-thesis.cls+ template complies with
+standard theis margins: 1.25 inch left, 1 inch top, bottom and right.
+But your \emph{printout} may not give the right measurement, if your
+printer/printer-driver scales the document.  You may have to turn off
+scaling and/or tweak the settings in the \verb+wit-thesis.cls+ file.
+
+Someone said: \emph{``Some laser printers don't do the margins correctly, for
+example my printer shifts the page a bit.  You can correct this with
+the} \verb+\hoffset+ \emph{and} \verb+\voffset+ \emph{lengths as:}\\
+\hspace*{2em}\verb+\hoffset -0.0625in+\\
+\hspace*{2em}\verb+\voffset  0.15625in+''
+
+
+\subsection{Bad Pagebreaks}
+
+Sometimes \LaTeX{} does not do exactly what you want with respect to
+pagebreaks.  To solve this you can manually add a \verb+\pagebreak+
+command where it should break, or you could add
+\verb+\enlargethispage{12pt}+ to make a page slightly larger if
+needed; though I'm not sure how the thesis reviewer will look on such
+transgressions, so do that at own risk.
+
+Bad pagebreaks in the table of contents (or list of tables/figures):
+If you get a bad pagebreak in a table of contents you can force a
+pagebreak by: \verb+\addtocontents{toc}{\protect\pagebreak}+ you add
+this at the point in your document that corresponds to that place in
+the table of contents.  For list of tables and list of figures,
+replace `toc' in the line above with `lot' or `lof.'
+
+
+\subsection{Bad Linebreaks}
+
+Bad linebreaks in chapter, section (subsection, etc...), or
+table/figure caption titles: This classfile tries to make all titles
+conform to the requirements of standard thesis manuals, but it is possible
+that it gets things wrong and you may want to add linebreaks (the
+\verb+\\+ command) yourself.  However, the table of contents title
+should not have any linebreaks.  The way you do it is to add an
+optional argument to \verb+\chapter+, \verb+\section+,
+\verb+\caption+ as in:\\[0.5\baselineskip]
+\hspace*{2em}\verb+\chapter[Title for Table of Contents]{Title With\\Linebreaks}+\\[0.5\baselineskip]
+Note that for \verb+\caption+'s in figures and tables you might have
+to do this whenever you have a small figure or table as the
+table/figure environment cannot make the caption only as long as the
+figure since it doesn't know how large the figure is until it typesets
+everything.  See example above and more examples in the long-example
+directory.  You can also solve the \verb+\caption+ issue with minipage
+in the same way we do centering, see
+section~\ref{sec::centered:tab:fig}.
+
+
+
+\subsection{Vertical Space}
+
+This classfile tries to make all the vertical space as required, but
+sometimes you may need to modify what it does, or you just need to
+insert some vertical space.  You use the \verb+\vspace+ and
+\verb+\vspace*+ commands (see \LaTeX{} manual).  You can use positive
+or negative length there and \verb+\vspace*+ makes sure the space appears
+even if there is a pagebreak in between.  For example to add 2 inches
+of space you can add \verb+\vspace{2in}+.
+
+
+\subsection[Non-Bold Math in the TOC: $x=2\pi/e$]{Bold Math in the Thesis:  $\mathbf{x=\pi}$}
+
+Math in section titles need to be \textbf{bold}, but cannot be bold in
+the Table of Contents.
+
+\chapter{SECTIONING --- THE MIDDLE} \label{chapter:middle}
+
+Middle chapter.  Here we put the middle things, that is, things that
+are in the middle and not in the beginning or in the end.  Here we
+also test all the section, subsection, and other headings.
+
+\textbf{Note\marginpar{\small\textbf{\textit{Style note}}} that
+  CHAPTER TITLES need to be in ALL CAPS --- YOU have enter the chapter
+  titles in ALL CAPS!!!}
+
+\section{A Section}
+\label{secone}
+
+Some section text.  Note that there should ALWAYS be some text in
+between two sectioning levels; a \verb+\section+ directly followed by
+a \verb+\subsection+ will not go through the review.
+
+\subsection{A Subsection With a Very Long Title To See How That Will
+  Look When Printed}
+\label{lonelysubsection}
+
+Some subsection text.
+
+\subsubsection{A Subsubsection}
+\label{lonelysubsubsection}
+
+Some subsubsection text.
+
+\subsubsubsection{A Subsubsubsection}
+\label{lonelysubsubsubsection}
+
+Some subsubsubsection text.  If you are using this, you are
+\sout{probably} over-organizing things.
+
+\paragraph{A Paragraph.}
+
+Some paragraph text.  You never really get this deep --- don't be
+ridiculous.
+
+\subsection{A Friend of \S\ref{lonelysubsection}}
+
+This subsection is here because \S\ref{lonelysubsection} cannot stand
+alone; sub$^{n}$-sectioning commands are supposed to \emph{divide} the
+text into logical chunks.
+
+\section{A 2nd Section}
+\label{sectwo}
+
+Yeah, no (sub)section can stand alone; so if there is a \S\ref{secone}
+there must be a \S\ref{sectwo}. \S\ref{lonelysubsection}, needs a
+``friend''; and so does \S\ref{lonelysubsubsection}, and
+\S\ref{lonelysubsubsubsection}.
+
+\vspace{\baselineskip}
+\centerline{\textbf{\large Bending the Rules :: A Single ``Section'' Without a Number}}
+\vspace{0.25\baselineskip}
+
+Occasionally, you may ``need'' a  sub$^n$-single section; in that case
+you can circumvent the rules by not numbering it, currently the
+\verb+\section*{...}+ commands do not produce the desirable results;
+the best quick-fix is:\\[0.25\baselineskip]
+\hspace*{2em}\verb+[blank line]+\\
+\hspace*{2em}\verb+\vspace{\baselineskip}+\\
+\hspace*{2em}\verb+\centerline{\textbf{\large A ``Section'' Without a Number}}+\\
+\hspace*{2em}\verb+\vspace{0.25\baselineskip}+\\
+\hspace*{2em}\verb+[blank line]+\\
+
+
+
+
+
+\chapter{REFERENCING}
+
+Below a list of references are provided in the acceptable format for
+Master's thesis submission. References are to be numbered and should
+appear either alphabetically or in the order of appearance in the
+text.  (\LaTeX{} does the former for the student.) For students using
+\LaTeX{} these are obtained using the plain style with
+\textsc{Bib}\TeX. There are references for journal \texttt{article}s
+\cite{ART}, \texttt{book}s and \texttt{booklet}s \cite{BOK,BKL},
+\texttt{inbook}s, \texttt{incollection}s, and \texttt{inproceedings}
+\cite{INC,INB,INP}. \emph{Note\marginpar{\small\textbf{\textit{Style
+        note}}} that when you have more than one citation in a single
+  bracket they must be in increasing numerical order!}  Other sources
+may be \texttt{proceedings} \cite{PRO}, technical reports
+(\texttt{techreport}) \cite{TEC}, theses (\texttt{mastersthesis}, or
+\texttt{PhDthesis}) \cite{MTH}, or \texttt{unpublished} material
+\cite{UNP}.  This should provide a fairly comprehensive list for any
+material that the student may encounter.  For additional assistance,
+see the graduate adviser in your area of concentration.
+
+If you cite a website \cite{Wikipedia} and you cannot find the year on
+the website, you should put "n.d." (not dated) at the end. (this is
+true for other reference also.) It must also has the word "accessed"
+and the month and year you access the website.  You can change how
+things with no author(s) are sorted in the bibliography by supplying a
+\texttt{key} entry (see \texttt{thbib.bib}), \emph{e.g.} this news
+release \cite{EPA-2010-09-07} will be sorted under ``U,'' the leading
+letter of the publishing agency (as preferred by the thesis
+publisher).
+
+This \cite{PatentExample} is an example of a patent.
+\textbf{\textit{Notice:}} how the \texttt{month} and \texttt{year}
+fields in \texttt{thbib.bib} have been abused to force the ``correct''
+format.
+
+Some articles \cite{ABCD2019} have many authors, pay attention to how
+(1) the entry looks in the \texttt{thbib.bib} file, and (2) in the
+final bibliography.

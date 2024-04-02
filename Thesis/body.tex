@@ -1,0 +1,170 @@
+% Note that if you want something in single space you can go back and
+% forth between single space and normal space by the use of \ssp and
+% \nsp.  If you want doublespacing you can use \dsp.  \nsp is normally
+% 1.5 spacing unless you use the doublespace option (or savepaper
+% option)
+%
+%(FORMAT) Usually you *don't* want to mess with the spacing for your
+%(FORMAT) final version.  If you think/know that the thesis template
+%(FORMAT) and/or thesis style file is incorrect/incomplete, PLEASE
+%(FORMAT) contact the maintainer.  THANK YOU!!!
+
+\chapter{INTRODUCTION}
+\label{ch:intro}
+% By labeling the chapter, I can refer to it later using the
+% label. (\ref{chap:intro}, \pageref{chap:intro}) Latex will take care
+% of the numbering.
+
+
+Virtual Reality (VR) is a popular medium for user interaction.
+Its primary feature is the use of a head mounted display(HMD) that allows the user to see a fully rendered virtual environment.
+Such a display necessarily blocks the user's vision of the real world.
+In addition to the HMD, the user typically has controllers allowing them to move through and interact with the environment.
+VR is used in several contexts from telepresence, to simulation and training, to entertainment. % Might need a citation here.
+
+\section{Problem Statement}
+\label{sec:problem_statement}
+
+A common problem in VR is that of motion sickness.
+Motion Sickness includes symptoms like nausea, fatigue, and upset stomach, among others.
+This most often occurs in VR when the user is moved in the virtual environment while the user is stationary in reality.
+Examples include moving using the controllers, standing on moving platforms, or riding vehicles.
+
+Many VR applications are aware of these issues and have implemented some features to prevent motion sickness.
+One common option is to apply a vignette to the user's vision when they are moving.
+Another is to change how the user moves, either by letting the user select an area or move an avatar in third person to an area, and then teleporting them to said specified area.
+The last common option is to snap the user's rotation a set increment rather than smoothly turn them.
+
+No solutions currently exist to dynamically reduce motion sickness for VR users based on the user's level of motion sickness.
+
+\section{Literature Review}
+\label{sec:lit_review}
+
+The majority of solutions to reduce motion sickness are either user toggleable features, like those above, or attempts to reduce latency within the VR system\cite{kundu2021study} (where latency can cause unexpected environment changes and thus sickness).
+User toggleable features either require the user to toggle them (before or after becoming motion sick), or are on by default, possibly degrading the user's experience where unnecessary.
+Decreased latency helps in many cases but is rarely the only cause of sickness.
+Many studies have been done to ascertain why people become motion sick in VR\cite{9236907,9133071}.
+Some have found that 360\textdegree treadmills can provide relief\cite{10.1117/12.2626662}, but they are not economical for most users, and do not solve all potential motion sickness triggers.
+Some have also found that visual cues can reduce motion sickness\cite{10.1145/3544999.3552489}, but if unsubtle, may degrade the user experience, especially for those who do not need such cues.
+
+A variety of models have been made to predict motion sickness in the user.
+Some use Deep Neural Networks (DNNs)\cite{8613651}, some use Convolutional Neural Networks (CNNs)\cite{8642906}, while others use more classical Machine Learning (ML) approaches\cite{8267239}.
+Most models predict using a combination of data from the application as well as user submitted feedback, but others predict using the users themselves, specifically their eye movements\cite{9234030,https://doi.org/10.1111/cgf.14703}.
+Some tools have even been made to help in the creation of predictive models\cite{10.1145/3526113.3545656}.
+However, none of these models have been used to drive the reduction of motion sickness, they solely predict when/if the user is getting motion sick.
+
+\setion{Objectives}
+\label{sec:objectives}
+
+The goal is to create a model that can predict a user becoming motion sick and find the most applicable motion sickness reduction feature.
+It should then activate the motion sickness reduction, and subsequently deactivate it, once the user is no longer at risk of motion sickness.
+As stated in section~\ref{sec:lit_review}, there are many models present for predicting motion sickness, thus many options to consider for what kind of model to use.
+
+\chapter{METHODS}
+\label{ch:methods}
+
+This is the methods, IE how I did it(badly).
+
+\section{Motion Sickness Detection with Convolutional Neural Networks}
+\label{sec:detection}
+
+I believe a CNN would be most useful as it can take data from the viewpoint of the user as well as other data (I.E.\ controller, motion, and pose data) from the user.
+A CNN take in a wide array of information at once, a CNN can categorize into multiple motion sickness categories, causes, or ratings beyond a binary ``is motion sick'' or ``is not motion sick'' rating.
+More importantly, CNNs can convolve over a window of time to provide a more accurate assessment of the user's sickness as it changes over time.
+
+\subsection{Dataset}
+\label{subsec:dataset}
+
+This is my dataset.
+Youch.
+
+\subsection{Network Architecture}
+\label{subsec:architecture}
+
+Here's how the Net is set up.
+
+\subsection{Training}
+\label{subsec:training}
+
+Here's how I trained the model.
+
+\section{Motion Sickenss Prevention with Vignetting, Snap Turning, and User Warnings}
+\label{sec:prevention}
+
+How am I preventing motion sickness?
+
+\subsection{Vignetting}
+\label{subsec:vignetting}
+
+Blind 'em.
+
+\subsection{Snap Turning}
+\label{subsec:snap_turn}
+
+You will not rotate.
+
+\subsection{User Warnings}
+\label{subsec:user_warnings}
+
+You will be warned.
+
+\section{Marrying Detection and Prevention}
+\label{sec:marrying}
+
+Putting them together was more complicated than you might think.
+
+\subsection{The Environment}
+\label{subsec:environment}
+
+I made a roller-coaster.
+It's pretty cool.
+Sick even.
+
+\subsection{Loading the Model in Unity}
+\label{subsec:loading}
+
+This went horribly.
+Curse you Microsoft.
+
+\subsection{Using Inter-Process Communication Instead}
+\label{subsec:ipc}
+
+This is bad, terrible.
+
+
+\chapter{RESULTS}
+\label{ch:results}
+
+So here's how it turned out!
+
+\chapter{CONCLUSION}
+\label{ch:conclusion}
+
+And finally\ldots
+
+%Intro
+%  Problem Statement
+%  Objectives
+%  Literature Review
+%Methods
+%  Motion Sickenss Detection with Convolutional Neural Networks
+%    Dataset
+%	Network Achitecture
+%	Training
+%  Motion Sickenss Prevention with Vignetting, Snap Turning, and User Warnings
+%    Vignetting
+%	Snap Turning
+%	User Warnings
+%  Marrying Detection and Prevention
+%    Loading the Model in Unity
+%	Using Inter-Process Communication Instead
+%Results
+%  Model Predictions
+%  Model Accuracy
+%  Application Performance
+%Conclusions
+%  Future Work
+%Appendex
+%Bibliograpy
+
+
