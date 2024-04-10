@@ -900,7 +900,7 @@ don't use the twocolumn option}
     {\@author} \\
 %    {\@degree} {\@switchofto} {\@degreein} \\
     {\@degreeONE} {\@degreeTWO} {\@degreeTHREE} \\
-    San Diego State University, {\@gradyear}
+    Wentworth Institute of Technology, {\@gradyear}
     \par
   \endgroup
   \vspace*{12pt}

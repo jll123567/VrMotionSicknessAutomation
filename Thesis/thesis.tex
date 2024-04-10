@@ -115,6 +115,12 @@
 % To add an in-text degree symbol.
 \usepackage{textcomp}
 
+% For refrence links and hyperlinks
+\usepackage{hyperref}
+
+% For SVG file compatibility
+\usepackage{svg}
+
 
 % ======================================================================
 % ======================================================================
@@ -207,8 +213,8 @@
 % Copyright page
 % (FORMAT) Mandatory for thesis
 \begin{copyrightpage}
-  Copyright~\copyright~2024 \\
-  by \\
+  Copyright~\copyright~2024\\
+  by\\
   Jacob L. Ledbetter
 \end{copyrightpage}
 
@@ -277,8 +283,8 @@
 \begin{acknowledgments}
   I would like to thank Dr.~Folajimi for helping find articles I could not during my lit review.\\\\
   I would like to thank Dr.~Schuster for guidance, assistance with~\LaTeX, and being a shoulder to cry on when everything goes wrong.\\\\
-  I would like to thank Dr.~Melfi for guidance with some complicated matrix tranformations.\\\\
-  Lastly, I would like to thank Luc, Zettai Crewiki, Hordini, and LitterallyJustSmith for helping with C\# issues and pardoning some truly terrible code.
+  I would like to thank Dr.~Melfi for guidance with some complicated matrix transformations.\\\\
+  Lastly, I would like to thank members of the ChilloutVR Modding Group Discord server for helping with C\# issues and pardoning some truly terrible code.
 
 \end{acknowledgments}
 
@@ -290,8 +296,8 @@
 \input{body}
 
 % 
-% The bibliography page, must be between main body and appendices
-% 
+% The bibliography page must be between main body and appendices
+%
 % You must have thbib.bib file in the current directory 
 %
 % (uncomment \nocite{*} to force inclusion of all uncited entries)
@@ -300,7 +306,7 @@
 \bibliography{bibi}
 
 % This includes append.tex
-\input{append}
+%\input{append}
 
 
 \end{document}
