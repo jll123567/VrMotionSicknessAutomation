@@ -1,0 +1,312 @@
+% ======================================================================
+% Example Wentworth MSACS LaTeX Thesis.
+% ======================================================================
+%
+% (Lines beginning with % are comments and are ignored.)
+% 
+% The class file wit-thesis.cls must be in the current directory or
+% installed with the other classes as per standard LaTeX installation.
+% 
+% To generate run these commands:
+%    latex  thesis
+%    bibtex thesis
+%    latex  thesis
+%    latex  thesis
+% Then you need to use the dvips command to get postscript output
+% 
+% See the README file for more information
+% 
+
+
+\documentclass{wit-thesis}
+% 
+% For early printouts to save paper use the savepaper option as
+% 
+% \documentclass[savepaper]{wit-thesis}
+% 
+% This will make things single spaced, use small font and smaller
+% margins.  Stuff will be formatted differently if you don't use this
+% option but it's useful to basically see (read) what you typed so far
+% on paper without wasting much paper.  You might want to also comment
+% out the front matter and backmatter if printing out in savepaper
+% mode to save paper there.  Do not use this option on your final
+% printout as it doesn't satisfy the thesis manual requirements.
+
+% Also if you want to use double spacing rather then singlespacing (if
+% your thesis is very short, say 25 pages or less), then use the
+% `doublespace' option as
+% 
+% \documentclass[doublespace]{thesis-thesis}
+
+
+% ======================================================================
+% Graphics and Figures
+% ======================================================================
+%
+% For including graphics use
+% (Info) http://en.wikibooks.org/wiki/LaTeX/Importing_Graphics
+%
+% NOTE: My *may* need the graphicx package to get the correct
+% page-size (letter) for your document... Some environments,
+% e.g. TeXnicCenter default to 'a4' page size.
+\usepackage{epsfig}
+\usepackage{graphicx}
+
+% These packages may also be useful for pictures...
+% \usepackage{color}
+% \usepackage{eepic}
+% \usepackage{epic}
+% \usepackage{grapic}
+%
+% NOTE: adding packages is fun and exciting, but OFTEN has unintended
+%       consequences, as they redefine "things."  To minimize your
+%       pain, minimize the number of extra packages you include.
+%       Remember that you are trying to GRADUATE, not trying to
+%       generate The Ultimate Thesis to Blow Them[tm] All Away.
+
+
+% ======================================================================
+% The American Mathematical Society (AMS) packages
+% ======================================================================
+% You quite likely want these if you have equations in your thesis:
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+
+
+% ======================================================================
+% LONGTABLE is rarely used, but hard to get right... so I include it
+% in the right place, just to be safe.
+% ======================================================================
+
+\usepackage{longtable}
+
+
+% ======================================================================
+% This makes captions *bold*
+% ======================================================================
+%
+%(NOTE): Adding "justification=justified,singlelinecheck=false" to the
+%        list of options will force all captions (including "short
+%        one-line") to be left justified.  This is technically
+%        required by the DTM, but looks ugly.
+\usepackage[bf,labelsep=period,textfont=bf]{caption}
+
+
+% Other useful packages for theses (see LaTeX docs for descriptions of these)
+% 
+% For the \vref commands that also prints out the reference page
+% \usepackage{varioref}
+% 
+% For including computer code
+% \usepackage{alltt}
+% 
+% For the \url{http://foo.com} command to include url's (or filenames)
+% \usepackage{url}
+% 
+
+% ======================================================================
+% This package countains the \sout command (which you should never
+% use!)
+% ======================================================================
+\usepackage[normalem]{ulem}
+
+% To add an in-text degree symbol.
+\usepackage{textcomp}
+
+% For refrence links and hyperlinks
+\usepackage{hyperref}
+
+% For SVG file compatibility
+\usepackage{svg}
+
+
+% ======================================================================
+% ======================================================================
+% You definitely need to edit things BELOW this line
+% ======================================================================
+% ======================================================================
+
+% Author name
+\author{Jacob L. Ledbetter}
+
+
+% Title of the thesis (all in upper case), use \\ for line breaks as
+% usual, you can use up to 4 lines and make sure to set the counter
+% titlelines to the number of lines you used.
+% 
+% This is for the title page
+% 
+\title{A Method For Active Motion Sickness Reduction Using Predictive Models}
+% Number of lines in the title, without setting this the title page
+% will not be formatted properly
+\setcounter{titlelines}{1}
+
+
+% Heading style title, the number of lines can be different here then
+% in titlelines. This is for the abstract pages and the signature page.
+% 
+% (FORMAT) Make sure that this title has the EXACT same words at the
+% (FORMAT) title-page-title
+% 
+\titleheading{A Method For Active Motion Sickness Reduction Using Predictive Models}
+
+
+% (FORMAT) The "degree" is set on three lines; select one of the
+% following formats.
+
+% Degree (MS-ACS)
+\degreeONE{Master of Science}
+\degreeTWO{in}
+\degreeTHREE{Applied Computer Science}
+
+
+
+% ======================================================================
+% If you need to change the word 'Thesis' use \thesisname{Blah} and if
+% you need to change the middle line between \degree and \degreein on
+% the titlepage to something other then 'in' use \inofand{of} to use
+% 'of' for instance.  (This should not be necessary)
+% ======================================================================
+
+
+% Dates
+\gradyear{2024}
+% (Format) Term Year 
+\submitdate{Spring 2024}
+
+
+% ======================================================================
+% Thesis Committee
+% ======================================================================
+%
+% Your committee chair (don't include titles)
+% (FORMAT) Do not include the institution ("WIT") for local faculty
+% (FORMAT) members; however, for external members DO include the
+% (FORMAT) institution.
+\committeechair{Yetunde Folajimi}
+\committeechairdept{School of Computing and Data Science}
+
+% Second committee member
+\committeesecond{Micah Schuster}
+\committeeseconddept{School of Computing and Data Science}
+
+% Third (usually different department) committee member
+\committeethird{Lauren Melfi}
+\committeethirddept{School of Computing and Data Science}
+
+
+% ======================================================================
+% This is the start of the document
+% ======================================================================
+\begin{document}
+
+% Title page 
+% (FORMAT) Mandatory for thesis
+\maketitle
+
+% Signature page
+% (FORMAT) Mandatory for thesis
+\makesignature
+
+% Copyright page
+% (FORMAT) Mandatory for thesis
+\begin{copyrightpage}
+  Copyright~\copyright~2024\\
+  by\\
+  Jacob L. Ledbetter
+\end{copyrightpage}
+
+
+% ======================================================================
+% Dedication (make sure to format this correctly including a vspace
+% (say \vspace{3in} or using vfill) to make it center on the page if
+% desired, see the thesis manual) Or just delete this if you don't
+% have a dedication
+% 
+% (FORMAT) Optional page
+\begin{dedication}
+  \vspace{3in}
+  \centering
+%  Dedicated to the voices in my head, for being more sane than anyone else I know(including me)
+  Dedicated to my grandmother, may she rest in peace.
+\end{dedication}
+
+
+% ======================================================================
+% Epigraph (make sure to format this correctly, it will just be
+% centered on the page, see the manual) Or just delete this if you
+% don't have an epigraph
+% 
+% (FORMAT) Optional page
+%\begin{epigraph}
+%  We must know, we shall know.\\
+%  \begin{flushright}
+%    -- David Hilbert
+%  \end{flushright}
+%\end{epigraph}
+
+
+% ======================================================================
+% Here type the abstract of your thesis.
+% (FORMAT) Mandatory for thesis
+\begin{abstract}
+  % This just inserts the the abstract.tex file
+  \input{abstract}
+\end{abstract}
+
+
+% ======================================================================
+% Table of contents
+% (FORMAT) Mandatory for thesis
+\tableofcontents
+
+
+% ======================================================================
+% If you don't want a list of tables page, delete or comment out this
+% line
+% (FORMAT) ONLY delete this page if you have *no* tables
+\listoftables
+
+
+% ======================================================================
+% If you don't want a list of figures page, delete or comment out this
+% line
+% (FORMAT) ONLY delete this page if you have *no* figures
+\listoffigures
+
+
+% Your acknowledgments go here
+% Or just delete this if you don't have acknowledgments
+% (you should! - Suck up to your advisor and committee!!!)
+\begin{acknowledgments}
+  I would like to thank Dr.~Folajimi for helping find articles I could not during my lit review.\\\\
+  I would like to thank Dr.~Schuster for guidance, assistance with~\LaTeX, and being a shoulder to cry on when everything goes wrong.\\\\
+  I would like to thank Dr.~Melfi for guidance with some complicated matrix transformations.\\\\
+  Lastly, I would like to thank members of the ChilloutVR Modding Group Discord server for helping with C\# issues and pardoning some truly terrible code.
+
+\end{acknowledgments}
+
+
+
+% 
+% This includes body.tex
+% 
+\input{body}
+
+% 
+% The bibliography page must be between main body and appendices
+%
+% You must have thbib.bib file in the current directory 
+%
+% (uncomment \nocite{*} to force inclusion of all uncited entries)
+% \nocite{*}
+\bibliographystyle{IEEEtran}
+\bibliography{bibi}
+
+% This includes append.tex
+%\input{append}
+
+
+\end{document}

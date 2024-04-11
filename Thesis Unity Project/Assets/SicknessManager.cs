@@ -9,7 +9,6 @@ using System;
 public class SicknessManager : MonoBehaviour
 {
     public int predicted_sickness;
-    public bool prevent_sickness;
 
     public Renderer vignette;
     public GameObject MoveProvider;
