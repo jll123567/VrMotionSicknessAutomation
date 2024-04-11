@@ -1,4 +1,4 @@
-# Worklog
+# Worklog(Thesis)
 
 ## Dataset cleaning
 
@@ -105,3 +105,26 @@ then forced the script run with the CUDNN_PATH and LD_LIBRARY_PATH envvars.
 
 Got 30% accuracy on a full run, not great... gonna shuffle, make a bigger split(0.8), and make period larger(5s)
 holy! 80% accuracy!
+
+for full: loss: 0.4411 - categorical_accuracy: 0.8131
+numeric: loss: 1.6717 - categorical_accuracy: 0.4393
+image: loss: 1.3780 - categorical_accuracy: 0.4911
+
+# For ML4DS
+
+Adding LSTM layers with 64 units to the imaage and numeric portions of the full model.
+Removing datset shuffle on train.
+Setting period to like 3
+
+For numeric: LSTM must be before GlobalAveragePooling since that reduces dims, replacing GAP with LSTM
+For images: LSTM needs more dims so i'm using a ConvLSTM2D to convolve over images, over time
+~~For images some gap is needed since Conv3D layers return a 5d tensor and I need a 3d, so I'll use some gap here.~~
+Still GAPing after the LSTM
+
+Starts with really high accuracy, then dies down.
+Since I load multiple recordings and there's no shuffling, the accuracy loss seems to correspond with when it encounters a new reocrding and therefore a new environment.
+Dying a quarter of the way through each epoch, five recordings with 80% train, test split, hmmm
+
+It immeadiately does better with one application but it's stagnating pretty hard and, probably because it's overfitting really hard.
+
+trying with a large period, train acc is better already.

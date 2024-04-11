@@ -11,7 +11,7 @@ import re
 import decimal
 
 DEBUG = False
-period = int((5 * 60) / 3)  # (second*frames_per_seconds)/pooling_rate
+period = int((1 * 60) / 3)  # (second*frames_per_seconds)/pooling_rate
 downscale_ratio = 4  # How far to downscale images from original size, must be power of 2
 
 # Round image dimensions similar to tf.decode_jpeg's rounding.
@@ -242,7 +242,7 @@ def test_train_split(x: tf.data.Dataset, y: tf.data.Dataset, split=0.8, batchsiz
     y_train = y.take(l_train)
     y_test = y.take(l_test)
 
-    return tf.data.Dataset.zip(x_train, y_train).shuffle(1000).batch(batchsize), tf.data.Dataset.zip(x_test, y_test).batch(batchsize)
+    return tf.data.Dataset.zip(x_train, y_train).batch(batchsize), tf.data.Dataset.zip(x_test, y_test).batch(batchsize)
 
 
 def make_numeric_model(input_shape) -> tuple[Model, list[ModelCheckpoint | ReduceLROnPlateau | EarlyStopping]]:
@@ -337,8 +337,9 @@ def make_full_model(num_input_shape, img_input_shape) -> tuple[
     num_conv3 = keras.layers.Conv1D(filters=64, kernel_size=3, padding="same")(num_conv2)
     num_conv3 = keras.layers.BatchNormalization()(num_conv3)
     num_conv3 = keras.layers.ReLU()(num_conv3)
-    num_gap = keras.layers.GlobalAveragePooling1D()(num_conv3)
-    num_output_layer = keras.layers.Dense(5, activation="softmax")(num_gap)
+    # num_gap = keras.layers.GlobalAveragePooling1D()(num_conv3)
+    num_lstm = keras.layers.LSTM(64)(num_conv3)
+    num_output_layer = keras.layers.Dense(5, activation="softmax")(num_lstm)
 
     img_input_layer = keras.layers.Input(img_input_shape)
     img_conv1 = keras.layers.Conv3D(filters=64, kernel_size=3, padding="same")(img_input_layer)
@@ -350,7 +351,8 @@ def make_full_model(num_input_shape, img_input_shape) -> tuple[
     img_conv3 = keras.layers.Conv3D(filters=64, kernel_size=3, padding="same")(img_conv2)
     img_conv3 = keras.layers.BatchNormalization()(img_conv3)
     img_conv3 = keras.layers.ReLU()(img_conv3)
-    img_gap = keras.layers.GlobalAveragePooling3D()(img_conv3)
+    img_lstm = keras.layers.ConvLSTM2D(filters=64, kernel_size=3)(img_conv3)
+    img_gap = keras.layers.GlobalAveragePooling2D()(img_lstm)
     img_output_layer = keras.layers.Dense(5, activation="softmax")(img_gap)
 
     comb = keras.layers.Concatenate()([num_output_layer, img_output_layer])
@@ -368,13 +370,13 @@ def make_full_model(num_input_shape, img_input_shape) -> tuple[
 
     callbacks = [
         keras.callbacks.ModelCheckpoint(
-            "checkpoints/3_6_24_model_full.keras", save_best_only=True, monitor="val_loss"
+            "checkpoints/4_11_24_model_lstm_largePeriod_multiApp.keras", save_best_only=True, monitor="val_loss"
         ),
         keras.callbacks.ReduceLROnPlateau(
             monitor="val_loss", factor=0.5, patience=20, min_lr=0.0001
         ),
         keras.callbacks.EarlyStopping(monitor="val_loss", patience=50, verbose=1),
-        keras.callbacks.TensorBoard(log_dir='./logs/6_3_24_full', histogram_freq=1)
+        keras.callbacks.TensorBoard(log_dir='./logs/4_11_24_lstm_largePeriod_multiApp', histogram_freq=1)
     ]
 
     return full_model, callbacks
@@ -388,8 +390,16 @@ if __name__ == "__main__":
         '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/VR_Rome/P9 VRLOG-5091805',
         '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Beat_Saber/P4 VRLOG-5051047'
     ])
-    #
-    # train, test = test_train_split(x, y, split=0.8, batchsize=2)
+
+    # x, y = load_dataset([
+    #     '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Beat_Saber/P1 VRLOG-5041702',
+    #     '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Beat_Saber/P2 VRLOG-5041731',
+    #     '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Beat_Saber/P3 VRLOG-5051000',
+    #     '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Beat_Saber/P4 VRLOG-5051047',
+    #     '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Beat_Saber/P5 VRLOG-5051632'
+    # ])
+
+    train, test = test_train_split(x, y, split=0.8, batchsize=2)
 
     # numeric_model, numeric_callbacks = make_numeric_model((period, 116))
     # numeric_hist = numeric_model.fit(x=train,
@@ -398,6 +408,7 @@ if __name__ == "__main__":
     #                                  validation_data=test,
     #                                  verbose=1
     #                                  )
+    # numeric_model.load_weights("checkpoints/best_model_numeric.keras")
     # numeric_model.evaluate(test)
 
     # image_model, image_callbacks = make_image_model((period, img_size[0], img_size[1], 3))
@@ -407,18 +418,17 @@ if __name__ == "__main__":
     #                                validation_data=test,
     #                                verbose=1
     #                                )
+    # image_model.load_weights("checkpoints/best_model_image.keras")
     # image_model.evaluate(test)
 
     full_model, full_callbacks = make_full_model((period, 116), (period, img_size[0], img_size[1], 3))
-    # full_hist = full_model.fit(x=train,
-    #                            epochs=250,
-    #                            callbacks=full_callbacks,
-    #                            validation_data=test,
-    #                            verbose=1
-    #                            )
-    # full_model.evaluate(test)
-
-    full_model.load_weights("checkpoints/3_6_24_model_full.keras")
-    full_model.save("saved_models/3_6_24_model_full", save_format="tf")
+    full_hist = full_model.fit(x=train,
+                               epochs=250,
+                               callbacks=full_callbacks,
+                               validation_data=test,
+                               verbose=1
+                               )
+    # full_model.load_weights("checkpoints/3_5_24_model_full.keras")
+    full_model.evaluate(test)
 
     input("Training Finished. Press enter to quit.")
