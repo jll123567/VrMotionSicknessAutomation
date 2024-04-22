@@ -107,8 +107,8 @@ Got 30% accuracy on a full run, not great... gonna shuffle, make a bigger split(
 holy! 80% accuracy!
 
 for full: loss: 0.4411 - categorical_accuracy: 0.8131
-numeric: loss: 1.6717 - categorical_accuracy: 0.4393
-image: loss: 1.3780 - categorical_accuracy: 0.4911
+numeric: loss: 1.6717 - categorical_accuracy: 0.4393, categorical_accuracy: 0.5048 - loss: 3.7492
+image: loss: 1.3780 - categorical_accuracy: 0.4911, categorical_accuracy: 0.5695 - loss: 1.2036
 
 # For ML4DS
 
