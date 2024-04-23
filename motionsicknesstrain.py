@@ -356,9 +356,9 @@ def make_full_model(num_input_shape, img_input_shape) -> tuple[
     img_output_layer = keras.layers.Dense(5, activation="softmax")(img_gap)
 
     comb = keras.layers.Concatenate()([num_output_layer, img_output_layer])
-    comb = keras.layers.Dense(32)(comb)
-    comb = keras.layers.Dense(16)(comb)
-    comb = keras.layers.Dense(8)(comb)
+    comb = keras.layers.Dense(32, activation="relu")(comb)
+    comb = keras.layers.Dense(16, activation="relu")(comb)
+    comb = keras.layers.Dense(8, activation="relu")(comb)
     full_out = keras.layers.Dense(5, activation="softmax")(comb)
 
     full_model = keras.Model(inputs=[num_input_layer, img_input_layer], outputs=full_out, name="Full_Model")
