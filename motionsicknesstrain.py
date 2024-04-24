@@ -11,7 +11,7 @@ import re
 import decimal
 
 DEBUG = False
-period = int((1 * 60) / 3)  # (second*frames_per_seconds)/pooling_rate
+period = int((5 * 60) / 3)  # (second*frames_per_seconds)/pooling_rate
 downscale_ratio = 4  # How far to downscale images from original size, must be power of 2
 
 # Round image dimensions similar to tf.decode_jpeg's rounding.
@@ -371,13 +371,13 @@ def make_full_model(num_input_shape, img_input_shape) -> tuple[
 
     callbacks = [
         keras.callbacks.ModelCheckpoint(
-            "checkpoints/4_23_24_full.keras", save_best_only=True, monitor="val_loss"
+            "checkpoints/4_24_24_full.keras", save_best_only=True, monitor="val_loss"
         ),
         keras.callbacks.ReduceLROnPlateau(
             monitor="val_loss", factor=0.5, patience=20, min_lr=0.0001
         ),
         keras.callbacks.EarlyStopping(monitor="val_loss", patience=50, verbose=1),
-        keras.callbacks.TensorBoard(log_dir='./logs/4_23_24_full', histogram_freq=1)
+        keras.callbacks.TensorBoard(log_dir='./logs/4_24_24_full', histogram_freq=1)
     ]
 
     return full_model, callbacks
@@ -421,8 +421,8 @@ if __name__ == "__main__":
                                validation_data=test,
                                verbose=1
                                )
-    full_model.load_weights("checkpoints/4_23_24_full.keras")
+    full_model.load_weights("checkpoints/4_24_24_full.keras")
     full_model.evaluate(test)
-    full_model.save("saved_models/4_23_24_full.keras")
+    full_model.save("saved_models/4_24_24_full.keras")
 
     input("Training Finished. Press enter to quit.")
