@@ -7,8 +7,8 @@ import socket
 
 import struct
 
-model_path = "./saved_models/3_5_24_model_full.keras"
-period = 100
+model_path = "./saved_models/4_23_24_full.keras"
+period = 20
 numeric_vals_amount = period * 116
 image_vals_amount = period * 131 * 256 * 3
 

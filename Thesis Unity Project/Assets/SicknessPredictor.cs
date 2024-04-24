@@ -20,11 +20,11 @@ using Microsoft.ML.Transforms.Onnx;
 
 public class ModelInput
 {
-    [VectorType(100 * 116)]
+    [VectorType(20 * 116)]
     [ColumnName("input_1")]
     public float[] Numeric { get; set; }
 
-    [VectorType(100 * 131 * 256 * 3)]
+    [VectorType(20 * 131 * 256 * 3)]
     [ColumnName("input_2")]
     public float[] Image { get; set; }
 }
@@ -62,7 +62,7 @@ public class SicknessPredictor : MonoBehaviour
 
     public string modelPath = "";
 
-    public int period = 100;
+    public int period = 20;
     
 
     public NativeArray<int> prediction;
@@ -364,7 +364,7 @@ public class SicknessPredictor : MonoBehaviour
 
         public void Execute()
         {
-            const int period = 100;
+            const int period = 20;
             const int numericVals = 116;
             const int imageVals = 131 * 256 * 3;
 
