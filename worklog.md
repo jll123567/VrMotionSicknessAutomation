@@ -128,3 +128,6 @@ Dying a quarter of the way through each epoch, five recordings with 80% train, t
 It immeadiately does better with one application but it's stagnating pretty hard and, probably because it's overfitting really hard.
 
 trying with a large period, train acc is better already.
+
+## New stats
+full: categorical_accuracy: 0.9803 - loss: 0.1689(deadass forgot to set last few dense layers to relu)

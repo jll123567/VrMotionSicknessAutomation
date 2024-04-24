@@ -216,6 +216,7 @@ def load_recording(path: str) -> tuple[tf.data.Dataset, tf.data.Dataset]:
     x_n = load_numeric(path)
     x_i = load_images(path)
     return tf.data.Dataset.zip(x_n, x_i), y
+    # return x_i, y
 
 
 def load_dataset(paths: list[str]) -> tuple[tf.data.Dataset, tf.data.Dataset]:
@@ -242,7 +243,7 @@ def test_train_split(x: tf.data.Dataset, y: tf.data.Dataset, split=0.8, batchsiz
     y_train = y.take(l_train)
     y_test = y.take(l_test)
 
-    return tf.data.Dataset.zip(x_train, y_train).batch(batchsize), tf.data.Dataset.zip(x_test, y_test).batch(batchsize)
+    return tf.data.Dataset.zip(x_train, y_train).shuffle(1000).batch(batchsize), tf.data.Dataset.zip(x_test, y_test).batch(batchsize)
 
 
 def make_numeric_model(input_shape) -> tuple[Model, list[ModelCheckpoint | ReduceLROnPlateau | EarlyStopping]]:
@@ -272,7 +273,8 @@ def make_numeric_model(input_shape) -> tuple[Model, list[ModelCheckpoint | Reduc
         keras.callbacks.ReduceLROnPlateau(
             monitor="val_loss", factor=0.5, patience=20, min_lr=0.0001
         ),
-        keras.callbacks.EarlyStopping(monitor="val_loss", patience=50, verbose=1)
+        keras.callbacks.EarlyStopping(monitor="val_loss", patience=50, verbose=1),
+        keras.callbacks.TensorBoard(log_dir='./logs/4_22_24_numeric', histogram_freq=1)
     ]
 
     numeric_model = keras.Model(inputs=input_layer, outputs=output_layer, name="Numeric_Convolution_Model")
@@ -312,7 +314,8 @@ def make_image_model(input_shape) -> tuple[Model, list[ModelCheckpoint | ReduceL
         keras.callbacks.ReduceLROnPlateau(
             monitor="val_loss", factor=0.5, patience=20, min_lr=0.0001
         ),
-        keras.callbacks.EarlyStopping(monitor="val_loss", patience=50, verbose=1)
+        keras.callbacks.EarlyStopping(monitor="val_loss", patience=50, verbose=1),
+        keras.callbacks.TensorBoard(log_dir='./logs/4_22_24_image', histogram_freq=1)
     ]
 
     image_model = keras.Model(inputs=input_layer, outputs=output_layer, name="Image_Convolution_Model")
@@ -337,9 +340,8 @@ def make_full_model(num_input_shape, img_input_shape) -> tuple[
     num_conv3 = keras.layers.Conv1D(filters=64, kernel_size=3, padding="same")(num_conv2)
     num_conv3 = keras.layers.BatchNormalization()(num_conv3)
     num_conv3 = keras.layers.ReLU()(num_conv3)
-    # num_gap = keras.layers.GlobalAveragePooling1D()(num_conv3)
-    num_lstm = keras.layers.LSTM(64)(num_conv3)
-    num_output_layer = keras.layers.Dense(5, activation="softmax")(num_lstm)
+    num_gap = keras.layers.GlobalAveragePooling1D()(num_conv3)
+    num_output_layer = keras.layers.Dense(5, activation="softmax")(num_gap)
 
     img_input_layer = keras.layers.Input(img_input_shape)
     img_conv1 = keras.layers.Conv3D(filters=64, kernel_size=3, padding="same")(img_input_layer)
@@ -351,8 +353,7 @@ def make_full_model(num_input_shape, img_input_shape) -> tuple[
     img_conv3 = keras.layers.Conv3D(filters=64, kernel_size=3, padding="same")(img_conv2)
     img_conv3 = keras.layers.BatchNormalization()(img_conv3)
     img_conv3 = keras.layers.ReLU()(img_conv3)
-    img_lstm = keras.layers.ConvLSTM2D(filters=64, kernel_size=3)(img_conv3)
-    img_gap = keras.layers.GlobalAveragePooling2D()(img_lstm)
+    img_gap = keras.layers.GlobalAveragePooling3D()(img_conv3)
     img_output_layer = keras.layers.Dense(5, activation="softmax")(img_gap)
 
     comb = keras.layers.Concatenate()([num_output_layer, img_output_layer])
@@ -370,13 +371,13 @@ def make_full_model(num_input_shape, img_input_shape) -> tuple[
 
     callbacks = [
         keras.callbacks.ModelCheckpoint(
-            "checkpoints/4_11_24_model_lstm_largePeriod_multiApp.keras", save_best_only=True, monitor="val_loss"
+            "checkpoints/4_23_24_full.keras", save_best_only=True, monitor="val_loss"
         ),
         keras.callbacks.ReduceLROnPlateau(
             monitor="val_loss", factor=0.5, patience=20, min_lr=0.0001
         ),
         keras.callbacks.EarlyStopping(monitor="val_loss", patience=50, verbose=1),
-        keras.callbacks.TensorBoard(log_dir='./logs/4_11_24_lstm_largePeriod_multiApp', histogram_freq=1)
+        keras.callbacks.TensorBoard(log_dir='./logs/4_23_24_full', histogram_freq=1)
     ]
 
     return full_model, callbacks
@@ -390,14 +391,6 @@ if __name__ == "__main__":
         '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/VR_Rome/P9 VRLOG-5091805',
         '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Beat_Saber/P4 VRLOG-5051047'
     ])
-
-    # x, y = load_dataset([
-    #     '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Beat_Saber/P1 VRLOG-5041702',
-    #     '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Beat_Saber/P2 VRLOG-5041731',
-    #     '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Beat_Saber/P3 VRLOG-5051000',
-    #     '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Beat_Saber/P4 VRLOG-5051047',
-    #     '/home/lambda8/ledbetterj1_VRMotionSickness/dataset/VRNetDataCollection/Beat_Saber/P5 VRLOG-5051632'
-    # ])
 
     train, test = test_train_split(x, y, split=0.8, batchsize=2)
 
@@ -428,7 +421,8 @@ if __name__ == "__main__":
                                validation_data=test,
                                verbose=1
                                )
-    # full_model.load_weights("checkpoints/3_5_24_model_full.keras")
+    full_model.load_weights("checkpoints/4_23_24_full.keras")
     full_model.evaluate(test)
+    full_model.save("saved_models/4_23_24_full.keras")
 
     input("Training Finished. Press enter to quit.")
