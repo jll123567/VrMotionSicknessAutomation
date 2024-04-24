@@ -61,6 +61,8 @@ public class SicknessPredictor : MonoBehaviour
     NativeArray<float> last100Image;
 
     public string modelPath = "";
+
+    public int period = 100;
     
 
     public NativeArray<int> prediction;
@@ -99,8 +101,8 @@ public class SicknessPredictor : MonoBehaviour
         {
             trigger.action.Enable();
         }
-        last100Numeric = new NativeArray<float>(100*116, Allocator.Persistent);
-        last100Image = new NativeArray<float>(100 * 131 * 256 * 3, Allocator.Persistent);
+        last100Numeric = new NativeArray<float>(period*116, Allocator.Persistent);
+        last100Image = new NativeArray<float>(period * 131 * 256 * 3, Allocator.Persistent);
         prediction = new NativeArray<int>(1, Allocator.Persistent);
 
         sm = GameObject.Find("SicknessManager").GetComponent<SicknessManager>();
@@ -114,8 +116,8 @@ public class SicknessPredictor : MonoBehaviour
             FileName = appPath + pyExePath,
             Arguments = appPath + pyScriptPath,
             UseShellExecute = true,
-            CreateNoWindow = true,
-            WindowStyle = ProcessWindowStyle.Hidden
+            CreateNoWindow = false,
+            WindowStyle = ProcessWindowStyle.Normal
         };
         p = Process.Start(startInfo);
     }
@@ -151,7 +153,7 @@ public class SicknessPredictor : MonoBehaviour
                 sm.ChangeSickness(prediction[0]);
                 predictJobInstance.newImage.Dispose();
             }
-            bufferCount = (int)Math.Min(bufferCount+1, 100);
+            bufferCount = (int)Math.Min(bufferCount+1, period);
             predictJobInstance = new PredictJob()
             {
                 last100Numeric = this.last100Numeric,
@@ -362,19 +364,20 @@ public class SicknessPredictor : MonoBehaviour
 
         public void Execute()
         {
+            const int period = 100;
             const int numericVals = 116;
             const int imageVals = 131 * 256 * 3;
 
-            NativeArray<float>.Copy(last100Numeric, numericVals, last100Numeric, 0, 99 * numericVals);  // Remove oldest(first) numeric values
-            NativeArray<float>.Copy(newNumeric, 0, last100Numeric, (99 * numericVals), numericVals);  // Add newest numeric values to end
+            NativeArray<float>.Copy(last100Numeric, numericVals, last100Numeric, 0, (period-1) * numericVals);  // Remove oldest(first) numeric values
+            NativeArray<float>.Copy(newNumeric, 0, last100Numeric, ((period-1) * numericVals), numericVals);  // Add newest numeric values to end
 
-            NativeArray<float>.Copy(last100Image, imageVals, last100Image, 0, 99 * imageVals); // Remove oldest(first) image.
+            NativeArray<float>.Copy(last100Image, imageVals, last100Image, 0, (period-1) * imageVals); // Remove oldest(first) image.
             int i = 0;
             for(int j=0; j<newImage.Length; j++)
             {
                 if (j % 4 != 3)
                 {
-                    last100Image[i + (99 * imageVals)] = newImage[j];
+                    last100Image[i + ((period-1) * imageVals)] = newImage[j];
                     i++;
                 }
             }
@@ -383,7 +386,7 @@ public class SicknessPredictor : MonoBehaviour
 
             // Predict.
             // This is implemented badly, but my sins have been pardoned by C# saints(literallyjustsmith, hordini).
-            if (bufferCount >= 100)
+            if (bufferCount >= period)
             {  // Exit early if not enough observations.
 
                 using Socket sock = new Socket(SocketType.Stream, ProtocolType.Tcp);
@@ -391,8 +394,8 @@ public class SicknessPredictor : MonoBehaviour
                 IPAddress.TryParse("127.0.0.1", out host);
                 sock.Connect(host, 9696);
 
-                const int numericBytes = sizeof(float) * 100 * numericVals;
-                const int imageBytes = sizeof(float) * 100 * imageVals;
+                const int numericBytes = sizeof(float) * period * numericVals;
+                const int imageBytes = sizeof(float) * period * imageVals;
 
                 byte[] commandBytes = new byte[numericBytes+imageBytes];
                 Buffer.BlockCopy(last100Numeric.ToArray(), 0, commandBytes, 0, numericBytes);

@@ -8,8 +8,9 @@ import socket
 import struct
 
 model_path = "./saved_models/3_5_24_model_full.keras"
-numeric_vals_amount = 100 * 116
-image_vals_amount = 100 * 131 * 256 * 3
+period = 100
+numeric_vals_amount = period * 116
+image_vals_amount = period * 131 * 256 * 3
 
 
 if __name__ == "__main__":
@@ -42,9 +43,9 @@ if __name__ == "__main__":
                             numeric_bytes = conn_bytes[0:4 * numeric_vals_amount]
                             image_bytes = conn_bytes[4 * numeric_vals_amount:]
                             numeric_vals = np.array(struct.unpack('f' * numeric_vals_amount, numeric_bytes),  # Unpack from bytes to floats, put into a numpy array, then make sure it's the right shape.
-                                                    np.float32).reshape((1, 100, 116))
+                                                    np.float32).reshape((1, period, 116))
                             image_vals = np.array(struct.unpack('f' * image_vals_amount, image_bytes), np.float32).reshape(
-                                (1, 100, 131, 256, 3))
+                                (1, period, 131, 256, 3))
                             # inference
                             prediction = model.predict([numeric_vals, image_vals])
                             # Get most likely class.
