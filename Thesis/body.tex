@@ -3,54 +3,56 @@
 
 Virtual Reality (VR) is a popular medium for user interaction.
 Its primary feature is the use of a head mounted display(HMD) that allows the user to see a fully rendered virtual environment.
-Such a display necessarily blocks the user's vision of the real world.
-In addition to the HMD, the user typically has controllers allowing them to move through and interact with the environment.
+Such a display blocks the user's vision of the real world.
+In addition to the HMD, the user has controllers allowing them to move through and interact with the environment.
 The HMD and controllers have their position and rotation tracked in physical space.
-This tracked data used to create a tracked space containing the tracked devices, which can be used to attach and move objects within an application's virtual space.
-VR is used in several contexts from telepresence\cite{HOANG2023102378}, to simulation and training, to entertainment\cite{Bigscreen}.
+The tracking data creates a tracking space that maps real world objects to objects in the virtual environment.
+VR is used in several contexts from telepresence\cite{HOANG2023102378}, to simulation and training\cite{hbrCompaniesUsing}, to entertainment\cite{Bigscreen}.
 
 \section{Problem Statement}
 \label{sec:problem_statement}
 
 A common problem in VR is that of motion sickness.
-Motion Sickness includes symptoms like nausea, fatigue, and upset stomach, among others.
-This most often occurs in VR when the user is moved in the virtual environment while the user is stationary in reality.
+Motion sickness includes symptoms like nausea, fatigue, and upset stomach, among others.
+This most often occurs in VR when the user is moved in the virtual environment while the user is stationary in reality\cite{Reason1978-im}.
 Examples include moving using the controllers, standing on moving platforms, or riding vehicles.
 
 Many VR applications are aware of these issues and have implemented some features to prevent motion sickness.
 One common option is to apply a vignette\cite{TunnelingVignette} to the user's vision when they are moving.
-Another is to change how the user moves, either by letting the user select an area or moving an avatar in third person to an area, and then teleporting the user to said specified area\cite{TeleportationProvider}.
-The last common option is to snap the user's rotation a set increment rather than smoothly turn them\cite{SnapTurn}.
+Another option is to change how the user moves, either by letting the user select an area or moving an avatar in third person to an area, and then teleporting the user\cite{TeleportationProvider}.
+The last common option we explore is to snap the user's rotation a set increment rather than smoothly turn them\cite{SnapTurn}.
 
-No solutions currently exist to dynamically reduce motion sickness for VR users based on the user's level of motion sickness.
+Few solutions currently exist to dynamically reduce motion sickness for VR users based on the user's level of motion sickness, and we have found none that do so without any user input.
 
 \section{Literature Review}
 \label{sec:lit_review}
 
-The majority of solutions to reduce motion sickness are either user toggleable features, like those above\ref{sec:problem_statement}, or attempts to reduce latency within the VR system\cite{kundu2021study} (where latency can cause unexpected environment changes and thus sickness).
-User toggleable features either require the user to toggle them (before or after becoming motion sick), or are on by default, possibly degrading the user's experience where unnecessary.
-Decreased latency helps in many cases but is rarely the only cause of sickness.
+The majority of solutions to reduce motion sickness are either user toggleable features, or attempts to reduce latency within the VR system\cite{kundu2021study} (where latency can cause unexpected environment changes and thus sickness).
+User toggleable features either require the user to toggle them before or after becoming motion sick.
+Decreased latency helps in many cases, but is not the only cause of sickness.
 Many studies have been done to ascertain why people become motion sick in VR\@.
 One paper found that ``low FPS, low refresh rates, and realistic pictures lead to high probability that players feel uncomfortable; and fighting and shooting games also tend to make players uncomfortable''\cite{9236907}.
-Another found the environment chosen, and its theme had a significant impact on the user's motion sickness\cite{9133071}.
-A third paper lists multiple factors, such as seen movement, HMD field of view(FOV), flickering/stuttering, and weather the user has a fixed point of reference\cite{doi:10.1080/10447318.2020.1778351}.
+Another found the environment chosen, and its theme or mood, had a significant impact on the user's motion sickness\cite{9133071}.
+A third paper lists multiple factors, such as seen movement, HMD field of view(FOV), flickering/stuttering, and whether the user has a fixed point of reference\cite{doi:10.1080/10447318.2020.1778351}.
 Some have found that 360\textdegree treadmills can provide relief\cite{10.1117/12.2626662} by linking seen movement to felt movement, but they are not economical for most users, and do not solve all potential motion sickness triggers.
-Some have also found that visual cues can reduce motion sickness\cite{10.1145/3544999.3552489} as they provide a frame of reference for the motion, but if unsubtle, it may degrade the user experience for those who do not need such cues.
+Some have also found that visual cues can reduce motion sickness\cite{10.1145/3544999.3552489} as they provide a frame of reference for the motion, but if unsubtle, they may degrade the user experience for those who do not need such cues.
+Some have tried to dynamically reduce motion sickness by controlling motion sickness mitigations based on how frequently a user clicks a button within some timeframe\cite{info:doi/10.2196/36397}.
+However, this requires active input from the user and cannot prevent motion sickness before it occurs.
 
 A variety of models have been made to predict motion sickness in the user.
 Some use Deep Neural Networks (DNNs)\cite{8613651}, and have found moderate results in detecting nausea.
 Some use more classical Machine Learning (ML) approaches\cite{8267239}, also finding moderate success in detecting motion sickness in non-extreme situations.
-While others use Convolutional Neural Networks (CNNs)\cite{8642906}, finding better accuracy than classical machine learning methods.
-Most models predict using a combination of data from the application as well as user submitted feedback, but others predict using the users themselves, specifically their eye movements\cite{9234030,https://doi.org/10.1111/cgf.14703}.
+Finally, some use Convolutional Neural Networks (CNNs)\cite{8642906}, finding better accuracy than classical machine learning methods.
+Most models predict using a combination of data from the application as well as user submitted feedback, but others predict using the users themselves from external sensors, specifically user eye movements\cite{9234030,https://doi.org/10.1111/cgf.14703}.
 Some tools have even been made to help in the creation of predictive models\cite{10.1145/3526113.3545656}, making it easier to create new motion sickness datasets.
-However, none of these models have been used to drive the reduction of motion sickness, they solely predict when/if the user is getting motion sick.
+However, none of these models have been used to drive the reduction of motion sickness, they only predict when/if the user is getting motion sick.
 
 \section{Objectives}
 \label{sec:objectives}
 
-Our goal is to create a model that can predict a user becoming motion sick and find the most applicable motion sickness reduction feature.
+Our goal in this thesis is to create a model that can predict a user becoming motion sick and find the most applicable motion sickness reduction feature.
 It should then activate the motion sickness reduction, and subsequently deactivate it, once the user is no longer at risk of motion sickness.
-As stated in section~\ref{sec:lit_review}, there are many models present for predicting motion sickness, thus many options to consider for what kind of model to use, though a CNN seems best.
+As stated in section~\ref{sec:lit_review}, there are many models present for predicting motion sickness, thus many options to consider for what kind of model to use.
 
 \chapter{METHODS}
 \label{ch:methods}
@@ -60,21 +62,53 @@ Our approach used a CNN for motion sickness prediction and common motion sicknes
 \section{Motion Sickness Detection with Convolutional Neural Networks}
 \label{sec:detection}
 
-We believe a CNN would be most useful as it can take data from the viewpoint of the user as well as other data (I.E.\ controller, motion, and pose data) from the user.
-A CNN take in a wide array of information at once, a CNN can categorize into multiple motion sickness categories, causes, or ratings beyond a binary ``is motion sick'' or ``is not motion sick'' rating.
+A Convolutional Neural Network is a type of Neural Network that involves convolutions in its processing.
+In a neural network, input values are fed into ``neurons'' which then produce an output value.
+A neuron passes the weighted sum of each input through an activation function, which determines its output value.
+Activation functions are typically non-linear, differentiable, and monotonic.
+There are many different activation functions e.g., sigmoid, Rectified Linear Unit(ReLU), Hyperbolic Tangent.
+Groups of neurons are arranged into layers, and each layer tends to have its outputs fully connected to the neurons of the next layer.
+
+Convolutional Neural Networks vary by changing how the neurons are layered and how they receive input.
+Each layer contains a set of filters.
+Each filter, also known as a kernel, will be centered on a location in an array of values.
+The filter takes the weighted sum of its center and adjacent values in the array and puts them through an activation function like the neurons described earlier.
+What values in the array are adjacent are determined by the kernel size.
+The array and therefore the kernel can be more than one dimensional.
+After the filter computes its output, that output is considered the output for the location in the array the filter was centered on.
+The filter is then centered, and its output is gotten for each position in the array, creating a convolution.
+This is done for all filters, creating a new array representing the convolved outputs of each filter.
+This means convolutional layers can capture the spatial relations of values in the array, like images, or values over time.
+By adding more convolutional layers, more complex patterns can be detected.
+For example, one layer may find groups of pixels representing straight lines at various rotations in an image, and the next layer may find arrangements of those lines in the shape of a box.
+As well, CNNs are typically designed to include some sort of pooling, where a smaller array is made from the output of some function applied over the array.
+This usually takes the form of taking the maximum or the average of a number of elements in the array, also determined by a kernel size.
+For example, an image can be pooled by taking the average of all two by two blocks of pixels, making a new image that is a quarter of the original size.
+Figure~\ref{fig:cnn_example} shows a simple diagram of a CNN\cite{theclickreaderIntroductionConvolutional}.
+
+\begin{figure}[h!]
+    \includegraphics[width=\linewidth]{Figures/cnn_diag}
+    \centering
+    \caption{Simplified diagram of a Convolutional Neural Network from theclickreader.com}
+    \label{fig:cnn_example}
+\end{figure}
+
+We believe a CNN would be most useful as it can take data from the viewpoint of the user as well as other data, e.g.~controller, motion, and pose data, from the user.
+Like a neural network, a CNN can take in a wide array of information at once, and can be made to categorize into multiple motion sickness categories, causes, or ratings.
 More importantly, CNNs can convolve over a window of time to provide a more accurate assessment of the user's sickness as it changes over time.
 
 \subsection{Dataset}
 \label{subsec:dataset}
 
-To train a CNN, we need a dataset of VR use with some sort of scoring of how motion sick the user was.
+To train a CNN, we need a dataset of VR use with a scoring of how motion sick the user was.
 For this, we used the VRNet Motion Sickness dataset\cite{wen2023vr}.
 The dataset contains a set of recordings for multiple VR games.
-Each recording has a set of frames (images from the HMD screens, labeled as~\verb+s<frame number>.jpg+), their motion vectors (movements of blobs of pixels, labeled~\verb+<frame number>.zfp+~in the zfp format) and depth (distance from the virtual camera to a virtual object, per pixel, labeled~\verb+d<frame number>.jpg+).
-Each recording also has csv files with data for the camera, controller inputs, controller pose, in game objects, and lights for each recording.
+Each recording has a set of frames (images from the HMD screens, labeled as~\verb+s<frame number>.jpg+), their motion vectors (movements of blobs of pixels, labeled~\verb+m<frame number>.zfp+~in the zfp format) and depth (distance from the virtual camera to a virtual object, per pixel, labeled~\verb+d<frame number>.jpg+).
+Each recording also has csv files with data for the camera, controller inputs, controller pose, in-game objects, and lights for each recording.
 As well, each recording has a ``voice'' csv file containing the motion sickness ratings given by participants during the recording.
 
-The dataset comes as a large collection of nested zip files, some are unorganized recording folders while others contain folders for each game, the game folders containing multiple csv files for each recording and maybe some recording folders.
+The dataset comes as a large collection of nested zip files, some are unorganized recording folders while others contain folders for each game.
+The game folders contained multiple csv files for each recording and maybe some recording folders.
 This meant that once all the zip files were decompressed, files needed to be sorted into their respective recording folder and each recording folder into a respective game folder.
 A fair amount of time was also spent making sure file names matched a specific uniform pattern (\verb+<game name>/P<participant number>VRLOG-<recording timestamp>/<file name>+).
 
@@ -89,12 +123,14 @@ The motion vector data could not be decoded from their compressed zfp format as 
 The dataset images are inconsistent from game to game.
 Some games have both eyes' perspective, while others only have one eye's perspective.
 While all games have their depth images flipped upside-down, some additionally have their frame images flipped.
-THe images are quite large for a CNN with 2016 by 1042 pixels and three color channels.
-Using Pillow(a python library), we flipped images and resized them to half-resolution(1008 by 521 pixels).
-We dedicated to copy images with only one eye's perspective to make them appear to have two eyes and fit the full resolution of other images.
+The images are quite large for a CNN with 2016 by 1042 pixels and three color channels.
+The size is relevant as larger images make the CNN have to perform more calculations and require more filters/more pooling to generalize effectively.
+Therefore, CNNs are usually designed to work with smaller images.
+Using Pillow(a Python library), we flipped images and resized them to half-resolution(1008 by 521 pixels).
+We decided to copy images with only one eye's perspective to make them appear to have two eyes and fit the full resolution of other images.
 
 The motion sickness ratings for each recording were given as the participants in the VRNet dataset recorded them and were not available for each frame of the recording.
-To account for this, each rating was attached to the nearest recorded frame by it timestamp.
+To account for this, each rating was attached to the nearest recorded frame by its timestamp.
 For each recorded frame lacking a rating, a rating was generated by linearly interpolating between the two ratings surrounding it and rounding to the nearest whole number.
 For recorded frames before the first user rating, they were set to the minimum sickness (1) as the participants in the VRNet dataset started recordings not sick.
 For recorded frames after the last user rating, the last user rating was used as the value.
@@ -102,28 +138,29 @@ This interpolation step was preformed for each recording and written to a `voice
 
 We removed many columns from all the csv format files as many were duplicates, only zero, or would have little impact on the model.
 Some columns contained multiple values per row and were split to a column per value.
-Data recorded for each device(HMD, left-hand controller, right-hand controller) were recorded as separate rows per frame.
-To have one row of data equal to one produced frame of application runtime for each file, all device values for a single frame were combined into one row.
+Data for each device(HMD, left-hand controller, right-hand controller) was recorded as separate rows per frame.
+To have one row of data equal to one produced frame of application runtime for each file, all device values for a single frame were combined into one row where each value was given its own column.
 Camera transformation matrices were listed for all cameras in the scene, so rows not related to the main camera used by the user were removed.
 The frame images are referred to as ``image'' data throughout the rest of this paper, while all other data (controller input, controller pose, camera transformation matrices) are referred to as ``numeric'' data.
 
 \subsection{Network Architecture}
 \label{subsec:architecture}
 
-Two models were created, one to handle image data and one to handle numeric data.
+Two small models were created, one to handle image data and one to handle numeric data.
+These models were then combined into one larger model.
 Both models were made using the TensorFlow and Keras Python libraries for machine learning.
 
-The numeric model is a Convolutional Neural Network that takes 100 instances of numeric data.
+The numeric model is a Convolutional Neural Network that takes 20 instances of numeric data.
 Each instance consists of 116 values in IEEE 32-bit floating point format.
 Thirty-two values are dedicated to the main camera's transformation matrices.
 Thirty values are dedicated to the 5-axis (with two dimensions per axis) input data from the HMD, left-hand controller, and right-hand controller.
-Lastly, Fifty-Four values are dedicated to HMD, left-hand controller, and right-hand controller's position, rotation, velocity, and angular velocity within tracking space.
+Lastly, 54 values are dedicated to HMD, left-hand controller, and right-hand controller's position, rotation, velocity, and angular velocity within tracking space.
 This input is passed through a convolution over the window of time using Keras's Conv1D layer.
-The convolution passes 64 filters over the 100 time steps where each filter is three time steps wide.
-Each Con1D layer is followed by a BatchNormalization layer that enforces that the outputs of the Conv1D layer have a mean of 0 and a standard deviation of 1.
+The convolution passes 64 filters over the 20 time steps where each filter is three time steps wide.
+Each Conv1D layer is followed by a BatchNormalization layer that enforces that the outputs of the Conv1D layer have a mean of 0 and a standard deviation of 1.
 This increases network performance as most Neural Networks(NN) expect to work with normally distributed values.
-Following batch normalization is a layer representing the neuron activation function, of which the Rectified Linear Unit (ReLU) was chosen.
-ReLU is quite common for NN and was chosen as such.
+Following batch normalization is a layer representing the neuron activation function, of which ReLU was chosen.
+ReLU is quite common for NNs and was chosen as such.
 The convolution, batch normalization, and ReLU activation layers are repeated twice for a total of three convolutions.
 To convert the filters from convolution to a classification, the output values from each filter need to be pooled together.
 This pooling is provided by a GlobalAveragePooling1D layer.
@@ -134,17 +171,20 @@ Its convolutions occur on two-dimensional images over the time window and as suc
 The convolutional layers use 64 filters with each filter spanning three time steps and three pixels on the x-axis and y-axis of the image.
 The global average pooling layer also becomes a GlobalAveragePooling3D\@.
 
-Both models, when trained separately, may not perform as well (and did not as seen later in~\ref{ch:results}).
-To aid this, both models are combined into an ensemble model.
+Both models are combined into an ensemble model.
+This was done as we only want one prediction of the user's motion sickness, but we have two different types of data each needing to be handled separately.
 This was done by connecting their output into a Concatenate layer and a few densely connected layers.
-The Concatenate layer does as it says and puts the output of two layers into a flat list of inputs (being 10 as each model predicted a ranking one through five).
-The densely connected layers had 32, 16, and 8 layers respectively and were added to let the combined model learn the shortcomings of the separate models and adjust its prediction to something more accurate.
+The Concatenate layer puts the output of two layers into a flat list of inputs (being 10 as each model predicted a ranking one through five).
+The densely connected layers had 32, 16, and 8 neurons respectively using ReLU as activation.
+These were added to let the combined model learn the shortcomings of the separate models and adjust its prediction to something more accurate.
+
+By learning the trends of the smaller models and adjusting the prediction, this model is an ensemble of other models.
 The combined model ends with a final densely connected layer like the final layer of the numeric and image models.
-The combined model is represented visually in~\ref{fig:model diagram}, with its various inputs, layers, and output.
+The combined model is represented visually in Figure~\ref{fig:model diagram}, with its various inputs, layers, and output.
 
 \pagebreak
 \begin{figure}[h!]
-    \includegraphics[height=0.7\paperheight]{Figures/3_5_24_model_full.keras}
+    \includegraphics[height=0.7\paperheight]{Figures/model_diag}
     \centering
     \caption{Diagram of layers and hyperparameters of the combined motion sickness detection model.}
     \label{fig:model diagram}
@@ -154,33 +194,32 @@ The combined model is represented visually in~\ref{fig:model diagram}, with its 
 \subsection{Training}
 \label{subsec:training}
 
-The model was compiled using the Adam algorithm for gradient decent and uses categorical cross-entropy as its loss function.
-During training, the model was set up to reduce its learning rate (LR) by half when the loss plateaued for 20 epochs to a minimum LR of 0.0001.
-It was also set up to end training early if 50 epochs passed with no improvement and would log the loss, accuracy, weights, among other things for each training run.
-Lastly, it would save the weights that had created the lowest loss to a file at the end of each epoch.
+The model was compiled using the Adam algorithm for gradient descent and uses categorical cross-entropy as its loss function.
+After running over the training data, the model would perform inference over the validation or testing data and get the accuracy and loss during the test.
+During training, the model was set up to reduce its learning rate (LR) by half when the validation loss plateaued for 20 epochs to a minimum LR of 0.0001.
+It was also set up to end training early if the validation loss plateaued for 50 epochs and would log the loss(train and validation), accuracy(train and validation), weights, among other things for each training run.
+Lastly, it would save the weights that had created the lowest training loss to a file at the end of each epoch.
 
 First, the image and numeric models were trained for 100 epochs maximum to get a clue as to how each separated model performed and to see if they worked properly or needed tweaking.
-Every 100 rows of the dataset is a time-period, and is given a rating that is the average of all ratings in the window, and represented as a one-hot vector.
-One hundred rows per time-period was chosen as this represents five seconds of application runtime with the application running at 60 frames per second and only every third frame being recorded in the dataset.
-The dataset is then split into a training and testing set, where the split is 50\%/50\%.
-A split of 80\% training data and 20\% testing data was originally tried, but was found to cause the individual models to overfit and perform poorly in testing.
+After this preliminary test, the combined model was trained for a maximum of 250 epochs.
+Two hundred fifty epochs were chosen because it was assumed to be around a few hours rather than a few days.
+Since the model has two inputs, the numeric data and the image data, both need to be zipped together for each row.
+Every 20 rows of the dataset is a time-period, and is given a rating that is the average of all ratings in the window, and represented as a one-hot vector.
+Twenty rows per time-period was chosen as this represents one second of application runtime with the application running at 60 frames per second and only every third frame being recorded in the dataset.
+The dataset, as a set of sequential time-periods, is split into a training and testing/validation set, where the split is 80\%/20\%.
 Time periods were batched together in sets of 2 to make training faster.
 Typically, with time series data like this dataset, each time period would be somewhat dependent on the past time-period.
-This is still somewhat true, the past time-periods have fairly little impact on the current period.
-This means we can shuffle the order of the periods to try and reduce overfitting in the model and help it generalize more effectively.
-Only the training data was shuffled.
+This is still somewhat true, the past time-periods have little impact on the current period.
+Additionally, by leaving the periods in order, the difference between any two periods while training will be small and so the model will not make larger adjustments to improve its accuracy.
+Considering this, we shuffled the order of the periods after they were split.
+Only the training split was shuffled.
 Lastly, the resolution of the frame images was cut to a fourth as the dataset was loaded to stay within the available system memory of the training machine.
-This leaves the images with a result of 256 by 131 pixels.
+This leaves the images with a resolution of 256 by 131 pixels.
 
-Training the combined model was much the same as the separated models.
-The primary difference is the combine model did not overfit quite as severely and uses the original 80\%/20\% split for training and testing data.
-Since the model has two inputs, the numeric data and the image data, both need to be zipped together for each row before being batched into time periods and batches.
-Additionally, the combined model was set to train for longer with 250 epochs maximum.
-
-\section{Motion Sickenss Prevention In An Application with Vignetting, Snap Turning, and User Warnings}
+\section{Motion Sickness Prevention In An Application with Vignetting, Snap Turning, and User Warnings}
 \label{sec:prevention}
 
-To apply our model, we created an application that would likely create motion sickness and employed several standard methods for reducing that motion sickness based on the inferences of the model.
+To apply our model, we created an application that would likely cause motion sickness and employed several standard methods for reducing that motion sickness based on the inferences of the model.
 
 \subsection{The Environment}
 \label{subsec:environment}
@@ -191,24 +230,26 @@ The user had both continuous and teleport locomotion methods for moving around t
 The user enters roller-coasters by pointing at and clicking a button in the environment, after which they will be seated in the roller-coaster's car and will ride along the track.
 Afterward, they will be dismounted from the ride and able to walk around again as well as select another coaster to ride.
 The environment contains some hills made using Unity's Terrain Generation tools and realistic texturing received from~\url{https://3dtextures.me/}\cite{3dtextures.me}, so the environment resembles those in the dataset instead of a completely flat environment.
-The environment is shown in~\ref{fig:environment_images}.
+The environment is shown in Figure~\ref{fig:environment_images}.
 Within this environment, three motion sickness reduction features were implemented.
 
 \begin{figure}[h!]
     \includegraphics[width=\linewidth]{Figures/Environment}
     \centering
-    \caption{Two images of the virtual environment from our application: one from the ground(left) and the other on the complex roller coaseter(right)}
+    \caption{Two images of the virtual environment from our application: one from the ground(left) and the other on the complex roller coaster(right)}
     \label{fig:environment_images}
 \end{figure}
 
 \subsection{Vignetting}
 \label{subsec:vignetting}
 
-Vignetting is the term for reducing the user's FOV with some sort of visual filter akin to a vignette.
-This removes visual context suggesting to the user that they are moving, which their vestibular system would contradict, causing motion sickness.
-Typically, this is done in games based purely on weather the user is locomoting or not.
+Vignetting is the term for reducing the user's FOV with a visual filter.
+The edges of the image become darker while the center of the image is unaffected.
+This removes visual context suggesting to the user that they are moving, which would cause motion sickness.
+Typically, this is done in games based purely on whether the user is locomoting or not.
+Locomoting is when the user is moving in the environment, usually with the controllers, without moving physically.
 In this application, the size of the vignette was determined by the rating provided by the model, where the sicker the user was, the larger the vignette and the less of their periphery the user could see.
-The vignetting was provided by Unity's Tunneling Vignette Shader\cite{TunnelingVignette} and examples of our vignetting are shown in~\ref{fig:vignetting_example}.
+The vignetting was provided by Unity's Tunneling Vignette Shader\cite{TunnelingVignette} and examples of our vignetting are shown in Figure~\ref{fig:vignetting_example}.
 
 \begin{figure}[h!]
     \includegraphics[width=\linewidth]{Figures/Vignette}
@@ -220,7 +261,7 @@ The vignetting was provided by Unity's Tunneling Vignette Shader\cite{TunnelingV
 \subsection{Snap Turning}
 \label{subsec:snap_turn}
 
-Snap Turning refers to larger user rotations that occur instantaneously with a single input.
+Snap turning refers to larger user rotations that occur instantaneously with a single input.
 For instance, the user would press right once on the joystick to ``snap'' 45\textdegree~instantaneously.
 This is contrasted by the normal method of holding the joystick right to turn at a constant velocity over time.
 This reduces motion sickness by reducing the motion seen but not felt by the user as they rotate over large increments instantly and simply rotate their head for smaller increments.
@@ -230,11 +271,10 @@ By default, the application uses continuous turning, unless the user has a motio
 \label{subsec:user_warnings}
 
 Some applications will warn the user to take a break if they have used the application for a certain amount of time.
-Our application will display a warning if the model has rated the user as having a motion sickness of five, which is the maximum.
-The warning (seen~\ref{fig:user_warning}) tells the user to take a break and is attached to the user's vision.
+Our application will display a warning if the model has rated the user as having a motion sickness of five (which is the maximum) for thirty seconds.
+The warning (seen in Figure~\ref{fig:user_warning}) tells the user to take a break and is attached to the user's vision.
 The warning is removed after five seconds with a lower motion sickness rating from the model.
 This is meant as a last resort if nothing can reduce the users' detected sickness as to minimize the effects of prolonged sickness.
-Below is an image of said warning.
 
 \begin{figure}[h!]
     \includegraphics[width=\linewidth]{Figures/Warning}
@@ -244,22 +284,22 @@ Below is an image of said warning.
 \end{figure}
 
 
-\section{Marrying Detection and Prevention}
-\label{sec:marrying}
+\section{Connecting Detection and Prevention}
+\label{sec:connecting}
 
 Once the application was built and the model was trained, the two had to be combined.
-This was not as easy as one would think.
 
 
 \subsection{Pulling the necessary data for inference}
 \label{subsec: pulling_data}
 
-Pulling controller inputs, and camera matrices were easy as Unity provided functionality to access this data, the device pose was more complicated.
+Pulling controller inputs and camera matrices was easy as Unity provided functionality to access this data, the device pose was more complicated.
 The dataset and therefore the model had recorded the position and rotation of each device in a 4x3 transformation matrix.
 Unity, however, provides the position as a vector and the rotation as a quaternion\cite{voight2021quaternion}.
 Unity provides a function for retrieving a transformation matrix from a translation(position), rotation, and scale(which would remain as $<1, 1, 1>$).
-This function returns a 4x4 matrix, however, where the last row is always $\left[\begin{matrix} 0 & 0 & 0 & 1 \end{matrix}\right]$.
-Since the last row is always the same and one row needed to be discarded, the last row was discarded to create the 4x3 matrices needed for the poses.
+This function returns a 4x4 matrix, however; the last row is always $\left[\begin{matrix} 0 & 0 & 0 & 1 \end{matrix}\right]$.
+This row exists to make sure the matrix is square for other operations, though this is not relevant here as the first three rows had the information we needed.
+Given our needs, the last row was discarded to create the 4x3 matrices for the poses.
 
 While originally the numeric and image data from the application would be pulled each frame, this approach introduced massive performance losses.
 This is because of how the frame image was represented.
@@ -271,7 +311,7 @@ Of the floating point formats available, the options were RFloat, RGFloat, or RG
 The first two formats lack the blue channel the model needs for inference while the last has an additional channel(alpha) that needed to be removed.
 To remove the alpha value from the image, we iterated over each value in the image copying it to a float array unless it was the alpha value.
 Since iterating over the image, meant iterating over $256*131*4$ or 134144 values, this took considerable time, around 60ms.
-However, frames need to be generated in around 18ms and this code would have otherwise held the main thread, reducing the framerate to around 15 frames per second, which would make the user more motion sick among other things.
+However, frames need to be generated in around 18ms and this code would have otherwise held up the main thread, reducing the framerate to around 15 frames per second, which would make the user more motion sick among other things.
 This required moving the logic into another thread; using Unity's Jobs system.
 Jobs maintain thread safety by requiring that the user only work on memory explicitly allocated for the job.
 This meant that before starting a job, all data needed for the job would have to be polled, then copied to the job's own memory; then the job could be run.
@@ -281,141 +321,164 @@ This culminated in putting together the last one-hundred frames of numeric and i
 First, the current time-period would be sent to the job with the new numeric and image data from the current frame.
 Jobs also only work with arrays because of specific memory allocation constraints.
 Therefore, the job would copy the latest 99 frames from the end of the array containing them to the beginning, and would copy the newest data to the end.
-For numeric data, this was simply constituted copying from an array containing that data.
+For numeric data, this simply constituted copying from an array containing that data.
 For the new image, each value was iterated through to only copy the red, green, and blue values, but not the alpha values.
 Then the job would end and the new data would be copied back.
 This process alone would take two or three frames worth of time, meaning the time-period only polled every second or third frame, which matched up with what the model was trained on.
-This, however, was only to ready data to be given to the model.
+This was only to process data to be given to the model.
 
 \subsection{Loading the Model in Unity}
 \label{subsec:loading}
 
-The model was originally planned to be loaded directly from with Unity.
+The model was originally planned to be loaded directly from within Unity.
 This would have been possible as Unity uses the C\# programming language, and Microsoft provides a framework for performing ML tasks in their aptly named ML package.
-The major benefits of loading the model within C\# are that it's much more performant.
-This is because moving data into the model is fast and the ML library can more easily make use of the GPU for influencing than tensorflow from within Windows. % TODO: Cite a source about tf GPU fickleness.
-Influencing using the GPU is important as, compared to the CPU, it is much better at handling matrix math and manipulations which primarily make up the computation of CNNs.
-Unlike keras, Microsoft's ML package uses a different model storage format and runtime named Onnx.
-Converting a keras model to onnx is relatively easy.
-However, no matter what was tried, the onnx runtime would not function.
+The major benefit of loading the model within C\# is that it's much more performant.
+This is because moving data into the model is fast and the ML library can more easily make use of the GPU for predicting than TensorFlow can while within Windows.
+Inferencing using the GPU is important as, compared to the CPU, it is much better at handling matrix math and manipulations which primarily make up the computation of CNNs.
+Unlike Keras, Microsoft's ML package uses a different model storage format and runtime named Onnx.
+Converting a Keras model to onnx is relatively easy.
+Despite many attempts, the onnx runtime would not function properly.
+We then decided to try something else due to time constraints.
 
 \subsection{Using Inter-Process Communication Instead}
 \label{subsec:ipc}
 
-Without the Onnx runtime, we had to use a different method to load the model for influencing.
-Since the model would load in python, we decided to load it in python using tensorflow and keras as we did for training.
+Without the Onnx runtime, we had to use a different method to load the model to predict motion sickness.
+Since the model would load in Python, we decided to load it in Python using TensorFlow and Keras as we did for training.
 This necessitated a new process to run the model, separate from the C\# process that gathered the data for inferencing.
 This required the use of interprocess communication, specifically sockets.
 
-Sockets are the same thing used to send data over the internet.
-Each process creates a socket, one process is a server waiting for clients to connect, clients then connect and send data, the server sends data back.
-In this case, the python process with the model would be the server and would have to take care to manage the connection received by the C\# process.
-The python server would wait for a connection, receive the data it needed for inference, get a rating for the user's motion sickness, and send that rating back to the client, and finally disconnect.
+Sockets are used to send data between processes, typically over a network.
+Each process creates a socket; one process is a server waiting for clients to connect, clients then connect and send data, the server sends data back.
+In this case, the Python process with the model would be the server and would have to take care to manage the connection received by the C\# process.
+The Python server would wait for a connection, receive the data it needed for inference, get a rating for the user's motion sickness, and send that rating back to the client, and finally disconnect.
 
 One would think to hold open the connection and let both processes talk until either ended.
 However, because getting GPU inferencing to work in Windows within TensorFlow is rather finicky, CPU inferencing, which is much slower, is needed instead.
-This slowness, like with the image iterations, would have wreaked havok on performance, so the C\# process needed to communicate with the python process through a job on a separate thread.
-Since jobs have their own segment of memory that cannot be shared with the main process, the connection cant be passed between the main thread and the job.
+This slowness, like with the image iterations, would have caused issues with performance, so the C\# process needed to communicate with the Python process through a job on a separate thread.
+Since jobs have their own segment of memory that cannot be shared with the main process, the connection cannot be passed between the main thread and the job.
 The job also can't hold onto the connection as its memory is deallocated when the job is complete, unless it's copied back to the main process, which couldn't be done.
-This necessitated creating a new socket connection to the python server for every job (which occurs every 2 to 15 frames), after the processing of the new frame's data was completed.
-Once the inference was received, the job would terminate and the prediction would be passed back to the main thread to be handed to the C\# that handled the motion sickness mitigations.
+This necessitated creating a new socket connection to the Python server for every job (which occurs every 2 to 15 frames), after the processing of the new frame's data was completed.
+Once the inference was received in the C\# process, the job would terminate and the prediction would be passed back to the main thread to be handed to the function that handled the motion sickness mitigations.
 
 \chapter{RESULTS}
 \label{ch:results}
 
 The model was quite accurate on the testing portion of the dataset.
-The separate numeric and image models each attained about 60\% accuracy.
-This isn't great but much better what would be 20\% if the model were guessing randomly.
-The combined model, however, got an accuracy score of 85\%.
-This is significantly better than either of the separate models.
-However, the model's accuracy on the dataset is not the same as its real-world efficacy.
-Most rows in the dataset are rated as a one of five, meaning a decent accuracy can be achieved by simply assuming 1 if no better rating can apply.
+The combined model attained 0.9803 categorical accuracy and categorical cross-entropy loss of 0.1689 after 146 epochs of training.
+Categorical cross-entropy is a loss function for categorical problems defined as $-log(P_{gt})$.
+$P_{gt}$ is the model's predicted probability that a given time window belongs to the correct class.
+Like all loss functions, the closer to zero, the better.
+Figures~\ref{fig:categorical_accuracy} and~\ref{fig:categorical_loss}~show the accuracy and loss of both training and validation across each epoch through the training process of the combined model.
+Figure~\ref{fig:learning_rate} shows the learning rate of the combined model per epoch.
+
+\begin{figure}[h!]
+    \includegraphics[width=\linewidth]{Figures/EpochAccuracy1}
+    \centering
+    \caption{Training and validation categorical accuracy of the combined model per training epoch.}
+    \label{fig:categorical_accuracy}
+\end{figure}
+
+\begin{figure}[h!]
+    \includegraphics[width=\linewidth]{Figures/EpochLoss1}
+    \centering
+    \caption{Training and valication categorical crossentropy loss of the combined model per training epoch.}
+    \label{fig:categorical_loss}
+\end{figure}
+
+\begin{figure}[h!]
+    \includegraphics[width=\linewidth]{Figures/EpochLearningRate1}
+    \centering
+    \caption{Learning rate of the combined model per training epoch.}
+    \label{fig:learning_rate}
+\end{figure}
+
+The only effective tuning done to the model was to increase the size of the time period as much as possible.
+The larger the time period is, the more data the model has to work with and the more accurate a prediction it can provide.
+The model's learning rate, or how much to shift the model's weights to minimize loss, was automatically tuned as stated in section~\ref{subsec:training}
+The model is not overfit or underfit.
+If the model were underfit, we would expect it to have poor accuracy in both training and testing.
+If the model were overfit, we would expect the training accuracy to be high while the testing accuracy was low.
+This is because as the model trains and improves accuracy on the training data, its lack of generalization would cause it to fail on the data it hasn't seen.
+The model, however, has a high training and a high testing accuracy.
+As well, the model's accuracy in training and testing increased as training went on, indicating some degree of learning.
+The testing accuracy varied wildly at first, but as training went on, the variance reduced significantly, indicating the tested accuracy is trustworthy.
 
 The model's predictions apply decently well to a real-world application.
-When the user looking around or physically walking around, the model rates them as having no motion sickness (rating of 1).
-This means the model is not rating the user as sick when the user is moving in a way that does not confuse their vestibular system.
-In contrast, the model rates them as being slightly sick (rating of 2) when the user moves using their joystick.
-This is good as the model is not overreacting and can differentiate between motion that the user can physically feel and motion that is only seen.
-Not only that, but this behavior effectively re-implements locomotion-based vignetting, which is common in most VR applications.
-When the user is riding a rollercoaster and looking forward, the user is rated as moderately sick (rating of 3).
-This rating being higher than walking is expected, but the model does not overreact and apply the highest rating which is good.
-When the user isn't looking forward to the rollercoaster but to the side, the model rates the user as either not sick or low sickness (rating 1--2).
-This makes sense as the user is perceiving motion for objects in the environment where looking forward the motion could only be perceived as the user's movement.
-The model also detects when the user removes their headset, stating there is no motion sickness (rating of 1).
-This is interesting as the model receives no specific data the headset was removed.
-As well, the model is not detected when the headset is set down, and its velocity is zero but specifically when the headset is removed.
-These results are all tabulated in~\ref{tab:predictions}
+The model rates most stimuli as a 2 (light sickness).
+This is the model making the assumption that the average user will be a little sick in VR, which the dataset supports with 2 being the most common rating.
+As the user starts locomoting, the rating rises between 3(somewhat sick) and 4(fairly sick).
+This behavior effectively re-creates locomotion activated vignetting, which is shown to reduce motion sickness.
+Turning using the joystick raises the rating to 3 at times.
+This behavior, if the rating were higher or the threshold for activating snap turning lower, is good for reducing sickness from turning.
+The simple roller coaster had little change in rating from the average.
+The simple roller coaster is unlikely to cause much motion sickness due to its speed and gentle, continuous turn.
+The complex roller coaster raised the rating between 2 and 4.
+The model seems to identify different parts of the coaster as causing different sicknesses.
+It seems to find the sections where the roller coaster climbs up slowly to be tame but sections with high speed and sharp turns to be more aggressive.
+The model's rating varied based on how rapidly the user followed the movement of the coaster with their head, where the less they looked around, the less sick they were predicted to be.
+The model takes some time between seeing motion sickness inducing stimuli and reacting.
+This delay varies from non-existent to 30 seconds.
+The model would not overreact to any particular stimuli, choosing to stay at a 2.
+Ratings of 1(no sickness) and 5(extreme sickness) were very rare.
+Table~\ref{tab:predictions} shows ratings for a variety of stimuli when the user is standing or seated.
+This data was collected by viewing the application's reactions to our use of it.
 
 \begin{table}[h!]
     \centering
-    \begin{tabular}{|l|l|l|}
-        \hline
-        Stimuli                                & Predicted Sickness Rating & Mitigations Applied  \\ \hline
-        Looking~(Physical)                      & 1                         & None                 \\ \hline
-        Looking~(Locomotion)                    & 1                         & None                 \\ \hline
-        Teleportation                          & 1                         & None                 \\ \hline
-        Walking~(Physical)                      & 1                         & None                 \\ \hline
-        Walking~(Locomotion)                    & 2                         & Vignetting(Light)    \\ \hline
-        Simple Roller Coaster                  & 3                         & Vignetting(Moderate) \\ \hline
-        Complex Roller Coaster~(Facing Forward) & 3                         & Vignetting(Moderate) \\ \hline
-        Complex Roller Coaster~(Facing to Side) & 1                         & None                 \\ \hline
-        Headset Removed                        & 1                         & None                 \\ \hline
-    \end{tabular}
-    \caption{Infrences by the motion predition model on various stimuli. Stimuli marked ``Physical'' refer to the user physically moving where stimuli marked ``Locomotion'' refer to the user acting with the controllers.}
+    \begin{tblr}{
+      cell{2}{2} = {c},
+      cell{2}{3} = {c},
+      cell{3}{2} = {c},
+      cell{3}{3} = {c},
+      cell{4}{2} = {c},
+      cell{4}{3} = {c},
+      cell{5}{2} = {c},
+      cell{5}{3} = {c},
+      cell{6}{2} = {c},
+      cell{6}{3} = {c},
+      cell{7}{2} = {c},
+      cell{7}{3} = {c},
+      cell{8}{2} = {c},
+      cell{8}{3} = {c},
+      hline{1,9} = {-}{0.08em},
+      hline{2} = {-}{0.05em},
+    }
+        Stimuli                & Sitting Response (1-5) & Standing Response (1-5) \\
+        Still                  & 2                      & 2                       \\
+        Looking Around         & 2                      & 2                       \\
+        Physical Walking       & N/A                    & 2                       \\
+        Continuous Locomotion  & 3-4                    & 3-4                     \\
+        Turning                & 2-3                    & 2-3                     \\
+        Riding Simple Coaster  & 2-3                    & 2                       \\
+        Riding Complex Coaster & 2-3                    & 2-4                     
+    \end{tblr}
+    \caption{Predictions by the motion sickness model on various stimuli. Responses from the model are from one to five being not motion sick to extremely motion sick.}
     \label{tab:predictions}
 \end{table}
 
 The performance overhead of this system is significant.
-With the model and data formatting operations, the application takes 30 to 40ms to produce a frame compared to 16ms without them.
+With the model and data formatting operations, the application takes 16ms to 40ms to produce a frame compared to a flat 16ms without them.
 This equates to a frame rate of 30 frames per second.
-This is not unusable but may cause more motion sickness, and for performance critical applications this may just not be feasible to apply.
-This performance is in part due to bad implementation.
+This is not unusable but may cause more motion sickness, and for performance critical applications this may not be feasible to apply.
+This performance is in part due to bad implementation due to time constraints.
 Assuming the model was inferencing using the GPU and a better method of loading and passing data to the model were found, and less image processing had to be done, the overhead could be significantly reduced.
 These could easily be resolved with more time.
 
 \chapter{CONCLUSION}
 \label{ch:conclusion}
 
-In conclusion, using a CNN to manage motion sickness mitigation in a VR application is absolutely feasible given that the overhead from the model is taken into account.
-We used the VRNet motion sickness dataset and created an ensemble model that could predict with an accuracy of 85\% on the held-out samples of the dataset.
+In conclusion, using a CNN to manage motion sickness mitigation in a VR application is feasible given that the overhead from the model is taken into account.
+We used the VRNet motion sickness dataset and created an ensemble model that could predict with an accuracy of 98.03\% on the held-out samples of the dataset.
 We created an example VR application with a somewhat detailed environment and motion sickness mitigations.
-When the model was put in control of those mitigations, it made decisions that were fairly logical, though with some performance concerns.
+When the model was put in control of those mitigations, it made decisions that were logical, though with some performance concerns.
 
-\section{Future work}
+\section{Future Work}
 \label{sec:future_work}
-The obvious first steps are to make influencing and collection of data from the engine more efficient.
-Beyond this, the model could be extended to increase accuracy by adding ``Long Short-Term Memory'' (LSTM) layers so the model can make more improved predictions.
-Note that this would require not shuffling the trained time periods.
+The first steps are to make prediction and collection of data from the engine more efficient.
+Beyond this, the model could be extended by adding ``Long Short-Term Memory'' (LSTM) layers so the model can make predictions on data before the given time-window.
+This would require not shuffling the trained time periods, which may reduce model accuracy but would yield better long-term predictions.
 There are other motion sickness mitigation features that could be implemented and controlled by the model.
 A dataset that could classify the user's motion sickness by cause could provide more specific mitigations by reducing the specific cause of motion sickness.
-A better model and more performant application should be tested on real users to see its real world efficacy.
+Our model and more performant application should be tested on real users to see its real world efficacy.
 If all these things were done and the improved application was proven to cause less motion sickness, this system could be deployed in many applications to reduce motion sickness at the best time, before it happens.
-
-
-
-%Intro
-%  Problem Statement
-%  Objectives
-%  Literature Review
-%Methods
-%  Motion Sickenss Detection with Convolutional Neural Networks
-%    Dataset
-%	Network Achitecture
-%	Training
-%  Motion Sickenss Prevention with Vignetting, Snap Turning, and User Warnings
-%    Vignetting
-%	Snap Turning
-%	User Warnings
-%  Marrying Detection and Prevention
-%    Loading the Model in Unity
-%	Using Inter-Process Communication Instead
-%Results
-%  Model Predictions
-%  Model Accuracy
-%  Application Performance
-%Conclusions
-%  Future Work
-%Appendex
-%Bibliograpy
-
-
